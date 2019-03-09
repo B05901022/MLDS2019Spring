@@ -10,6 +10,7 @@ import torchvision
 import torch.nn as nn
 import torch.utils.data as Data
 import matplotlib.pyplot as plt
+import torch.functional as F
 
 ###DEVICE###
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -49,14 +50,14 @@ class shallow(nn.Module):
                 nn.LeakyReLU(),
                 nn.Linear(128, 128),
                 nn.BatchNorm1d(128),
-                nn.LeakyReLU(),
-                nn.Linear(128, 10),
-                nn.Softmax(10))
+                nn.LeakyReLU())
+        self.output_layer = nn.Linear(128, 10)
         
     def forward(self, x):
         x = self.conv_layer(x)
         x = x.view(x.size(0), -1)
-        output = self.dnn_layer(x)
+        x = self.dnn_layer(x)
+        output = nn.Softmax(x)
         return output
 
 def parameter_count(input_model):
