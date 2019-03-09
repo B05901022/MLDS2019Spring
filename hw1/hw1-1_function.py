@@ -28,12 +28,13 @@ ADAMPARAM = {'lr':0.0001, 'betas':(0.9, 0.999), 'eps':1e-08}
 class net_shallow(nn.Module):
     def __init__(self):
         super(net_shallow, self).__init__()
-        self.dnn_layer = nn.Sequential(
-                nn.Linear(1, 256),
-                nn.Linear(256, 1))#769
+        self.layer1 = nn.Linear(1,256)
+        self.layer2 = nn.Linear(256,1)
         
     def forward(self, x):
-        output = self.dnn_layer(x)
+        x = F.relu(self.layer1(x))
+        output = F.relu(self.layer2(x))
+        
         return output
 
 def parameter_count(input_model):
