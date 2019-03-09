@@ -51,8 +51,9 @@ def exp_func(x):
 
 def main():
     ###Load dataset###
-    train_x = torch.from_numpy(np.random.rand(50000))
+    train_x = np.random.rand(50000)
     train_y = torch.from_numpy(exp_func(train_x))
+    train_x = torch.from_numpy(train_x)
     train_data = Data.TensorDataset(train_x, train_y) 
 
     ###DATALOADER###
