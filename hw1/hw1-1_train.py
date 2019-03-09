@@ -50,14 +50,13 @@ class shallow(nn.Module):
                 nn.LeakyReLU(),
                 nn.Linear(128, 128),
                 nn.BatchNorm1d(128),
-                nn.LeakyReLU())
-        self.output_layer = nn.Linear(128, 10)
+                nn.LeakyReLU(),
+                nn.Linear(128, 10))
         
     def forward(self, x):
         x = self.conv_layer(x)
         x = x.view(x.size(0), -1)
-        x = self.dnn_layer(x)
-        output = nn.Softmax(x)
+        output = self.dnn_layer(x)
         return output
 
 def parameter_count(input_model):
