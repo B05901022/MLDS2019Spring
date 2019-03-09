@@ -107,7 +107,7 @@ def main():
             optimizer.step()
             print("Batch: ", b_num, "loss: ", loss.item(), end = '\r')
             epoch_loss += loss.item()
-            epoch_acc  += torch.sum(torch.eq(pred, b_y), dim=0).item()
+            epoch_acc  += torch.sum(torch.eq(torch.argmax(pred, dim=1), b_y), dim=0).item()
             
         torch.save(train_model, 'shallow_model.pkl')
         torch.save(optimizer.state_dict(), 'shallow_model.optim')
