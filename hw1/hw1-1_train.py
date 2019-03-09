@@ -92,7 +92,7 @@ def main():
     train_model = shallow().to(device)
     
     ###OPTIMIZER###
-    optimizer = torch.optim.Adam(train_model.parameters(), lr=0.001)
+    optimizer = torch.optim.SGD(train_model.parameters(), lr=0.1, momentum=0.9, weight_decay=5e-4)
     
     ###LOSS FUNCTION###
     loss_func = nn.CrossEntropyLoss()
