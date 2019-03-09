@@ -107,7 +107,7 @@ def main():
             b_x = b_x.to(device)
             optimizer.zero_grad()
             pred = train_model(b_x)
-            loss = loss_func(pred.item(), b_y)
+            loss = loss_func(pred, b_y)
             loss.backward()
             optimizer.step()
             print("Batch: ", b_num, "loss: ", loss.item(), end = '\r')
