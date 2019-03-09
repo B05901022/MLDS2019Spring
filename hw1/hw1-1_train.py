@@ -32,14 +32,8 @@ class shallow(nn.Module):
                 nn.Conv2d(3, 8, kernel_size=(3,3), stride=(1,1), padding=1), #32 * 32
                 nn.BatchNorm2d(8),
                 nn.LeakyReLU(),
-                nn.Conv2d(8, 8, kernel_size=(3,3), stride=(1,1), padding=1), #32 * 32
-                nn.BatchNorm2d(8),
-                nn.LeakyReLU(),
                 nn.AvgPool2d((2,2)), #16 * 16
                 nn.Conv2d(8, 16, kernel_size=(3,3), stride=(1,1), padding=1), #16 * 16
-                nn.BatchNorm2d(16),
-                nn.LeakyReLU(),
-                nn.Conv2d(16, 16, kernel_size=(3,3), stride=(1,1), padding=1), #16 * 16
                 nn.BatchNorm2d(16),
                 nn.LeakyReLU(),
                 nn.AvgPool2d((2,2)) #8 * 8
