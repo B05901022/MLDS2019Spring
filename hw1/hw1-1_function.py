@@ -10,7 +10,7 @@ import torchvision
 import torch.nn as nn
 import torch.utils.data as Data
 import matplotlib.pyplot as plt
-import torch.functional as F
+import torch.nn.functional as F
 import numpy as np
 
 ###DEVICE###
@@ -34,7 +34,6 @@ class net_shallow(nn.Module):
     def forward(self, x):
         x = F.relu(self.layer1(x))
         output = F.relu(self.layer2(x))
-        
         return output
 
 def parameter_count(input_model):
@@ -52,7 +51,7 @@ def exp_func(x):
 
 def main():
     ###Load dataset###
-    train_x = np.random.rand(50000)
+    train_x = np.random.rand(50000).reshape(50000,1)
     train_y = torch.from_numpy(exp_func(train_x))
     train_x = torch.from_numpy(train_x)
     train_data = Data.TensorDataset(train_x, train_y) 
@@ -81,7 +80,9 @@ def main():
         
         for b_num, (b_x, b_y) in enumerate(train_dataloader):
             b_x = b_x.to(device)
+            b_x = b_x.float()
             b_y = b_y.to(device)
+            b_y = b_y.float()
             optimizer.zero_grad()
             pred = train_model(b_x)
             loss = loss_func(pred, b_y)
