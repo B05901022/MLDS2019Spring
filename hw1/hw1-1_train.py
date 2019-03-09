@@ -111,9 +111,9 @@ def main():
             
         torch.save(train_model, 'shallow_model.pkl')
         torch.save(optimizer.state_dict(), 'shallow_model.optim')
-        print("")
+        print("")   
         print("Epoch loss: ", epoch_loss / BATCHSIZE)
-        print("Epoch acc:  ", epoch_acc  / BATCHSIZE)       
+        print("Epoch acc:  ", epoch_acc  / len(train_data))       
         
     return 
     
