@@ -105,6 +105,7 @@ def main():
         
         for b_num, (b_x, b_y) in enumerate(train_dataloader):
             b_x = b_x.to(device)
+            b_y = b_y.to(device)
             optimizer.zero_grad()
             pred = train_model(b_x)
             loss = loss_func(pred, b_y)
