@@ -27,7 +27,7 @@ ADAMPARAM = {'lr':0.0001, 'betas':(0.9, 0.999), 'eps':1e-08}
 ###SHALLOW CNN MODEL###
 class net_shallow(nn.Module):
     def __init__(self):
-        super(shallow, self).__init__()
+        super(net_shallow, self).__init__()
         self.dnn_layer = nn.Sequential(
                 nn.Linear(1, 256),
                 nn.Linear(256, 1))#769
