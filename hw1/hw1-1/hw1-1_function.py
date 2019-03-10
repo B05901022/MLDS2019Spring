@@ -163,7 +163,7 @@ def main(args):
     ###LOSS HISTORY###
     plt.figure(1)
     plt.plot(np.arange(EPOCH)+1, loss_history)
-    plt.savefig(args.model_type + '_loss.png', format='png')
+    plt.savefig('pictures/'+args.model_type + '_loss.png', format='png')
     np.save('function_' + args.model_type + '_loss', np.array(loss_history))
     
     ###Testing###
@@ -174,8 +174,7 @@ def main(args):
     pred_y = train_model(test_x)
     plt.scatter(test_x.cpu().detach().numpy(), test_y.cpu().detach().numpy(), color='blue', label='label')
     plt.scatter(test_x.cpu().detach().numpy(), pred_y.cpu().detach().numpy(), color='red', label='pred')
-    plt.savefig(args.model_type +'_function.png', format='png')
-    plt.show()
+    plt.savefig('pictures/'+args.model_type +'_function.png', format='png')
         
     return 
     
