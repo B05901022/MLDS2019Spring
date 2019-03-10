@@ -98,14 +98,17 @@ def parameter_count(input_model):
         total_params += layer_parmas
     return total_params
 
-def exp_func(x):
+def exp_func(x, function_no):
     #return np.sin(x*5)
-    return np.sin(20 * np.cos(x))
+    if function_no == '0':
+        return np.sin(20 * np.cos(x))
+    if function_no == '1':
+        return np.cos(-17*x)+np.sin(-20*x)
 
 def main(args):
     ###Load dataset###
     train_x = np.random.rand(500000).reshape(500000,1)
-    train_y = torch.from_numpy(exp_func(train_x))
+    train_y = torch.from_numpy(exp_func(train_x, args.function))
     train_x = torch.from_numpy(train_x)
     train_data = Data.TensorDataset(train_x, train_y) 
 
@@ -154,7 +157,7 @@ def main(args):
             epoch_loss += loss.item()
             
         torch.save(train_model, 'function_'+args.model_type+'_model.pkl')
-        torch.save(optimizer.state_dict(), 'function_'+args.model_type+'_model.optim')
+        torch.save(optimizer.state_dict(), 'function_'+ args.function + '_'+args.model_type+'_model.optim')
         #if e%100 == 0:
         print("")
         print("Epoch loss: ", epoch_loss / len(train_data))
@@ -163,8 +166,8 @@ def main(args):
     ###LOSS HISTORY###
     plt.figure(1)
     plt.plot(np.arange(EPOCH)+1, loss_history)
-    plt.savefig('pictures/'+args.model_type + '_loss.png', format='png')
-    np.save('function_' + args.model_type + '_loss', np.array(loss_history))
+    plt.savefig('pictures/'+ args.function + '_' + args.model_type + '_loss.png', format='png')
+    np.save('function_' + args.function + '_' + args.model_type + '_loss', np.array(loss_history))
     
     ###Testing###
     plt.figure(2)
@@ -174,7 +177,7 @@ def main(args):
     pred_y = train_model(test_x)
     plt.scatter(test_x.cpu().detach().numpy(), test_y.cpu().detach().numpy(), color='blue', label='label')
     plt.scatter(test_x.cpu().detach().numpy(), pred_y.cpu().detach().numpy(), color='red', label='pred')
-    plt.savefig('pictures/'+args.model_type +'_function.png', format='png')
+    plt.savefig('pictures/'+ args.function + '_'+args.model_type +'_function.png', format='png')
         
     return 
     
@@ -182,5 +185,6 @@ def main(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='On function y = sin(20*cos(x))')
     parser.add_argument('--model_type', '-type', type=str, default='medium')
+    parser.add_argument('--function', '-func', type=str, default='0')
     args = parser.parse_args()
     main(args)
