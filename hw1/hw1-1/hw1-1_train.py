@@ -169,9 +169,9 @@ def main(args):
         torch.save(train_model, args.model_type+'_model.pkl')
         torch.save(optimizer.state_dict(), args.model_type+'_model.optim')
         print("")   
-        print("Epoch loss: ", epoch_loss / (len(train_data)/BATCHSIZE))
+        print("Epoch loss: ", epoch_loss / len(train_data))
         print("Epoch acc:  ", epoch_acc  / len(train_data))
-        loss_history.append(epoch_loss / (len(train_data)/BATCHSIZE))
+        loss_history.append(epoch_loss / len(train_data))
         acc_history.append(epoch_acc  / len(train_data))
     
     ###LOSS HISTORY###

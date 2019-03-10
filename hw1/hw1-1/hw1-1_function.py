@@ -157,13 +157,14 @@ def main(args):
         torch.save(optimizer.state_dict(), 'function_'+args.model_type+'_model.optim')
         #if e%100 == 0:
         print("")
-        print("Epoch loss: ", epoch_loss / (len(train_data)/BATCHSIZE))
-        loss_history.append( epoch_loss / (len(train_data)/BATCHSIZE))
+        print("Epoch loss: ", epoch_loss / len(train_data))
+        loss_history.append( epoch_loss / len(train_data))
     
     ###LOSS HISTORY###
     plt.figure(1)
     plt.plot(np.arange(EPOCH)+1, loss_history)
     plt.savefig(args.model_type + '_loss.png', format='png')
+    np.save('function_' + args.model_type + '_loss', np.array(loss_history))
     
     ###Testing###
     plt.figure(2)
