@@ -156,7 +156,7 @@ def main(args):
             print("Epoch", e, "Batch: ", b_num, "loss: ", loss.item(), end = '\r')
             epoch_loss += loss.item()
             
-        torch.save(train_model, 'function_'+args.model_type+'_model.pkl')
+        torch.save(train_model, 'function_'+ args.function + '_' +args.model_type+'_model.pkl')
         torch.save(optimizer.state_dict(), 'function_'+ args.function + '_'+args.model_type+'_model.optim')
         #if e%100 == 0:
         print("")
