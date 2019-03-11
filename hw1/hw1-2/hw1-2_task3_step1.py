@@ -87,6 +87,11 @@ def get_gradient_norm(params):
         grad_all += grad
     return grad_all ** 0.5
 
+def criterion(pred, true):
+    loss = nn.MSELoss(pred, true)
+    loss = torch.sum(loss)
+    return loss
+
 #===============================================================================================
 
 def main(args):
@@ -137,8 +142,8 @@ def main(args):
             print("Epoch", e, "Batch: ", b_num, "loss: ", loss.item(), end = '\r')
             epoch_loss += loss.item()
             
-        torch.save(train_model, 'hw1-2_task3_step1_function_model.pkl')
-        torch.save(optimizer.state_dict(), 'hw1-2_task3_step1_function_model.optim')
+        torch.save(train_model, 'hw1-2_task3_step1_function_model_'+str(e)+'.pkl')
+        torch.save(optimizer.state_dict(), 'hw1-2_task3_step1_function_model_'+str(e)+'.optim')
         #if e%100 == 0:
         print("")
         print("Epoch loss: ", epoch_loss / len(train_data))
@@ -161,10 +166,8 @@ def main(args):
             b_y = b_y.float()
             optimizer.zero_grad()
             pred = train_model(b_x)
-            loss_original = loss_func(pred, b_y)
-            
-            loss = get_gradient_norm(train_model.parameters())
-            Hessian = np.array(get_second_order_grad(optimizer.param_groups[0]['params'], loss_original))
+            loss = criterion(pred, b_y)
+            Hessian = np.array(get_second_order_grad(optimizer.param_groups[0]['params'], loss))
             #w_t = np.array(optimizer.param_groups[0]['params'])
             minimas = [np.linalg.eig(i.cpu())[0] for i in Hessian]
             tot_len = 0
