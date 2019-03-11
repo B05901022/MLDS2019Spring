@@ -1,4 +1,4 @@
-®M¥ó»İ¨D:
+å¥—ä»¶éœ€æ±‚:
 Python 3.6
 Pytorch 1.0.1
 Numpy 1.15.4
@@ -8,28 +8,28 @@ argparse 1.1
 
 Source code:
 
-¦ì©ó https://github.com/B05901022/MLDS2019Spring ¤W¡Agit clone«á¥´¶}hw1§Y¬°¦¹¦¸1-1©M1-2¤§Source code(¤À§O¦ì©óhw1-1,hw1-2¸ê®Æ§¨)
+ä½æ–¼ https://github.com/B05901022/MLDS2019Spring ä¸Šï¼Œgit cloneå¾Œæ‰“é–‹hw1å³ç‚ºæ­¤æ¬¡1-1å’Œ1-2ä¹‹Source code(åˆ†åˆ¥ä½æ–¼hw1-1,hw1-2è³‡æ–™å¤¾)
 
 Reproduce:
 
-1-1 (¨ç¼ÆÀÀ¦X)
+1-1 (å‡½æ•¸æ“¬åˆ)
 
-1¡B°õ¦æ python3 hw1-1_function.py (-type="deep") (-func="0")¥i°õ¦æ¼Ò«¬°V½m¨Ã²£¥Íµ²ªG(-type¥i±µ¨ü"shallow","medium","deep")(-function¥i±µ¨ü"0","1")
+1ã€åŸ·è¡Œ python3 hw1-1_function.py (-type="deep") (-func="0")å¯åŸ·è¡Œæ¨¡å‹è¨“ç·´ä¸¦ç”¢ç”Ÿçµæœ(-typeå¯æ¥å—"shallow","medium","deep")(-funcå¯æ¥å—"0","1")
    "0" : y=sin(20cos(x)), "1" : cos(-17x)+sin(-20x) 
-2¡B°õ¦æ python3 hw1-1_function_plot.py ¥i¨Ì¾Úµ²ªGÃ¸¹Ï(»İ­nshallow,medium,deep¼Ò«¬)
+2ã€åŸ·è¡Œ python3 hw1-1_function_plot.py å¯ä¾æ“šçµæœç¹ªåœ–(éœ€è¦shallow,medium,deepæ¨¡å‹)
 
 1-1 (Cifar10)
 
-1¡B°õ¦æ python3 hw1-1_train.py ¥i°õ¦æ¼Ò«¬°V½m¨Ã²£¥Íµ²ªG(-type¥i±µ¨ü"shallow","medium","deep")
-2¡B°õ¦æ python3 hw1-1_train_plot.py ¥i¨Ì¾Úµ²ªGÃ¸¹Ï(»İ­nshallow,medium,deep¼Ò«¬)
+1ã€åŸ·è¡Œ python3 hw1-1_train.py å¯åŸ·è¡Œæ¨¡å‹è¨“ç·´ä¸¦ç”¢ç”Ÿçµæœ(-typeå¯æ¥å—"shallow","medium","deep")
+2ã€åŸ·è¡Œ python3 hw1-1_train_plot.py å¯ä¾æ“šçµæœç¹ªåœ–(éœ€è¦shallow,medium,deepæ¨¡å‹)
 
 1-2 (task1)
 
-1¡B°õ¦æ python3 hw1-2_task1.py ¥i°õ¦æ¼Ò«¬°V½m¨Ã²£¥Íµ²ªG(»İª`·N¥Ñ©órandom seed¨Ã¥¼©T©w¡A¦]¦¹¦¹µ{¦¡µLªk§¹¥şreproduce)
-2¡B°õ¦æ python3 hw1-2_task1_plot.py ¥i±Nweight¨úPCA«áÃ¸¹Ï(reproduce©Ò»İ¤§¸ê®Æ¦s©ñ©óAll_Weight.zip¤¤¡A±NÀÉ®×¸ÑÀ£ÁY¦ÜpythonÀÉ©Ò¦b¸ê®Æ§¨«á§Y¥i°õ¦æ)
-3¡B°õ¦æ python3 hw1-2_task1_loss_acc_plot.py ¥iÃ¸¥Xaccuracy¤Îloss¤§°V½m¦±½u¹Ï(reproduce©Ò»İ¤§¸ê®Æ¦s©ñ©óCNN_shallow_loss_acc.zip¤¤¡A
-   ±NÀÉ®×¸ÑÀ£ÁY¦ÜpythonÀÉ©Ò¦b¸ê®Æ§¨«á§Y¥i°õ¦æ)
+1ã€åŸ·è¡Œ python3 hw1-2_task1.py å¯åŸ·è¡Œæ¨¡å‹è¨“ç·´ä¸¦ç”¢ç”Ÿçµæœ(éœ€æ³¨æ„ç”±æ–¼random seedä¸¦æœªå›ºå®šï¼Œå› æ­¤æ­¤ç¨‹å¼ç„¡æ³•å®Œå…¨reproduce)
+2ã€åŸ·è¡Œ python3 hw1-2_task1_plot.py å¯å°‡weightå–PCAå¾Œç¹ªåœ–(reproduceæ‰€éœ€ä¹‹è³‡æ–™å­˜æ”¾æ–¼All_Weight.zipä¸­ï¼Œå°‡æª”æ¡ˆè§£å£“ç¸®è‡³pythonæª”æ‰€åœ¨è³‡æ–™å¤¾å¾Œå³å¯åŸ·è¡Œ)
+3ã€åŸ·è¡Œ python3 hw1-2_task1_loss_acc_plot.py å¯ç¹ªå‡ºaccuracyåŠlossä¹‹è¨“ç·´æ›²ç·šåœ–(reproduceæ‰€éœ€ä¹‹è³‡æ–™å­˜æ”¾æ–¼CNN_shallow_loss_acc.zipä¸­ï¼Œ
+   å°‡æª”æ¡ˆè§£å£“ç¸®è‡³pythonæª”æ‰€åœ¨è³‡æ–™å¤¾å¾Œå³å¯åŸ·è¡Œ)
 
 1-2(task2)
-1¡B°õ¦æ python3 hw1-2_task2-1.py¡A¥i±o¨ìloss¡Bfunction©Mgradient normªº¹Ï
-2¡B°õ¦æ pytohn3 hw1-2_task2-2.py¡A¥i±o¨ìaccuracy¡Bloss©Mgradient normªº¹Ï
+1ã€åŸ·è¡Œ python3 hw1-2_task2-1.pyï¼Œå¯å¾—åˆ°lossã€functionå’Œgradient normçš„åœ–
+2ã€åŸ·è¡Œ pytohn3 hw1-2_task2-2.pyï¼Œå¯å¾—åˆ°accuracyã€losså’Œgradient normçš„åœ–
