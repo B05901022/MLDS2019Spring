@@ -162,10 +162,11 @@ def main(args):
             optimizer.zero_grad()
             pred = train_model(b_x)
             loss_original = loss_func(pred, b_y)
+            
             loss = get_gradient_norm(train_model.parameters())
             Hessian = np.array(get_second_order_grad(optimizer.param_groups[0]['params'], loss_original))
             #w_t = np.array(optimizer.param_groups[0]['params'])
-            minimas = [np.linalg.eig(i) for i in Hessian]
+            minimas = [np.linalg.eig(i.cpu())[0] for i in Hessian]
             tot_len = 0
             pos_eig = 0
             for i in minimas:
