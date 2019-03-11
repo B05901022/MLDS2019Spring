@@ -52,7 +52,15 @@ def exp_func(x):
 
 #=============================================================================================
 """
+Hessian
+
 reference:https://github.com/Ageliss/For_shared_codes/blob/master/Second_order_gradients.py
+"""
+
+"""
+xs = optimizer.param_groups[0]['params']
+ys = loss
+grads2 = get_second_order_grad(grads, xs) # second order gradient
 """    
 
 def get_second_order_grad(xs, ys):
@@ -64,15 +72,10 @@ def get_second_order_grad(xs, ys):
         for count, g in enumerate(grad):
             g2 = torch.autograd.grad(g, x, retain_graph=True)[0]
             g2 = torch.reshape(g2, [-1])
-            grads2_tmp.append(g2[count].data.cpu().numpy())
-        grads2.append(torch.from_numpy(np.reshape(grads2_tmp, x.size())).to(device))
+            grads2_tmp.append(g2.data.cpu().numpy())
+        s = max(x.size())
+        grads2.append(torch.from_numpy(np.array(grads2_tmp).reshape(s, s)).to(device))
     return grads2
-
-"""
-xs = optimizer.param_groups[0]['params']
-ys = loss
-grads2 = get_second_order_grad(grads, xs) # second order gradient
-"""
 
 #===============================================================================================
 
@@ -117,18 +120,8 @@ def main(args):
             optimizer.zero_grad()
             pred = train_model(b_x)
             loss = loss_func(pred, b_y)
-            Hessian = np.array(get_second_order_grad(optimizer.param_groups[0]['params'], loss))
-            w_t = np.array(optimizer.param_groups[0]['params'])
-            print(w_t[0].shape)
-            print(w_t[1].shape)
-            print(w_t[2].shape)
-            print(w_t[3].shape)
-            print()
-            print(Hessian[0].shape)
-            print(Hessian[1].shape)
-            print(Hessian[2].shape)
-            print(Hessian[3].shape)
-            sssss
+            #Hessian = np.array(get_second_order_grad(optimizer.param_groups[0]['params'], loss))
+            #w_t = np.array(optimizer.param_groups[0]['params'])
             loss.backward()
             optimizer.step()
             print("Epoch", e, "Batch: ", b_num, "loss: ", loss.item(), end = '\r')
@@ -140,6 +133,50 @@ def main(args):
         print("")
         print("Epoch loss: ", epoch_loss / len(train_data))
         loss_history.append( epoch_loss / len(train_data))
+    
+    ###SECOND TRAINING###
+    
+    ratio_list = []
+    loss_list  = []
+    
+    for e in range(EPOCH):
+        
+        #print("Epoch ", e)
+        epoch_loss = 0
+        
+        for b_num, (b_x, b_y) in enumerate(train_dataloader):
+            b_x = b_x.to(device)
+            b_x = b_x.float()
+            b_y = b_y.to(device)
+            b_y = b_y.float()
+            optimizer.zero_grad()
+            pred = train_model(b_x)
+            loss_original = loss_func(pred, b_y)
+            loss = torch.autograd.grad(optimizer.param_groups[0]['params'], loss_original).norm()
+            Hessian = np.array(get_second_order_grad(optimizer.param_groups[0]['params'], loss_original)
+            #w_t = np.array(optimizer.param_groups[0]['params'])
+            minimas = [np.linalg.eig(i) for i in Hessian]
+            tot_len = 0
+            pos_eig = 0
+            for i in minimas:
+                tot_len += len(i)
+                pos_eig += np.sum(np.array([1 if j > 0 else 0 for j in i]))
+            ratio_list.append(pos_eig/tot_len)
+            loss_list.append(loss_original)
+            loss.backward()
+            optimizer.step()
+            print("Epoch", e, "Batch: ", b_num, "loss: ", loss.item(), end = '\r')
+            epoch_loss += loss.item()
+            
+        torch.save(train_model, 'hw1-2_task3_step2_function_model.pkl')
+        torch.save(optimizer.state_dict(), 'hw1-2_task3_step2_function_model.optim')
+        #if e%100 == 0:
+        print("")
+        print("Epoch loss: ", epoch_loss / len(train_data))
+        loss_history.append( epoch_loss / len(train_data))
+    
+    np.save('loss', np.array(loss_list))
+    np.save('minimal_ratio', np.array(ratio_list))
         
         
     return 
