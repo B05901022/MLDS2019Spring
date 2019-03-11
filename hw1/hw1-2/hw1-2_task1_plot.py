@@ -16,8 +16,8 @@ import sklearn.decomposition
 a=[]
 b=[]
 pca=sklearn.decomposition.PCA(2)
-for i in range(10):
-    for k in range(1,9,1):
+for k in range(1,9,1):
+    for i in range(10):
         a.append(torch.load("Weight_epoch"+str(3*i+2)+"event"+str(k)+".pkl"))
         for j in a[-1].parameters():
             pass
@@ -25,11 +25,11 @@ for i in range(10):
 cv=pca.fit_transform(b)
 cv1=[]
 cv2=[]
-for s in range(10):
-    for ss in range(8):
-        cv1.append(cv[s][0])
-for v in range(10):
-    for vv in range(8):
-        cv2.append(cv[v][0])
+for s in range(8):
+    for ss in range(10):
+        cv1.append(cv[10*s+ss][0])
+for v in range(8):
+    for vv in range(10):
+        cv2.append(cv[10*v+vv][1])
 plt.text(cv1,cv2)
 plt.savefig("pca.png")
