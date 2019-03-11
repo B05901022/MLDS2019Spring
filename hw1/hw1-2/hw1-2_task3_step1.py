@@ -153,7 +153,7 @@ def main(args):
             pred = train_model(b_x)
             loss_original = loss_func(pred, b_y)
             loss = torch.autograd.grad(optimizer.param_groups[0]['params'], loss_original).norm()
-            Hessian = np.array(get_second_order_grad(optimizer.param_groups[0]['params'], loss_original)
+            Hessian = np.array(get_second_order_grad(optimizer.param_groups[0]['params'], loss_original))
             #w_t = np.array(optimizer.param_groups[0]['params'])
             minimas = [np.linalg.eig(i) for i in Hessian]
             tot_len = 0
