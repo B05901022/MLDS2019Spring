@@ -77,6 +77,16 @@ def get_second_order_grad(xs, ys):
         grads2.append(torch.from_numpy(np.array(grads2_tmp).reshape(s, s)).to(device))
     return grads2
 
+def get_gradient_norm(params):
+    grad_all = 0.0
+    #total_norm = 0.0
+    for p in params:
+        grad = 0.0
+        if p.grad is not None:
+            grad = p.grad.data.norm(2)
+        grad_all += grad
+    return grad_all ** 0.5
+
 #===============================================================================================
 
 def main(args):
@@ -152,7 +162,7 @@ def main(args):
             optimizer.zero_grad()
             pred = train_model(b_x)
             loss_original = loss_func(pred, b_y)
-            loss = torch.autograd.grad(optimizer.param_groups[0]['params'], loss_original).norm()
+            loss = get_gradient_norm(train_model.parameters())
             Hessian = np.array(get_second_order_grad(optimizer.param_groups[0]['params'], loss_original))
             #w_t = np.array(optimizer.param_groups[0]['params'])
             minimas = [np.linalg.eig(i) for i in Hessian]
