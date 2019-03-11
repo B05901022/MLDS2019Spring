@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Mon Mar 11 00:56:07 2019
+Created on Mon Mar 11 22:23:01 2019
 
 @author: austinhsu
 """
@@ -21,8 +21,8 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 torch.manual_seed(1)
 
 ###HYPERPARAMETER###
-EPOCH = 100
-BATCHSIZE = 50
+EPOCH = 10
+BATCHSIZE = 500
 ADAMPARAM = {'lr':0.001, 'betas':(0.9, 0.999), 'eps':1e-08}
 
 ###MODEL###
@@ -97,7 +97,7 @@ def criterion(pred, true, params):
 
 def main(args):
     ###Load dataset###
-    train_x = np.random.rand(5000).reshape(5000,1)
+    train_x = np.random.rand(50000).reshape(50000,1)
     train_y = torch.from_numpy(exp_func(train_x))
     train_x = torch.from_numpy(train_x)
     train_data = Data.TensorDataset(train_x, train_y) 
@@ -122,7 +122,7 @@ def main(args):
     ###LOSS RECORD###
     loss_history = []
     
-    
+    """
     ###Training###    
     for e in range(EPOCH):
         
@@ -150,6 +150,7 @@ def main(args):
         print("")
         print("Epoch loss: ", epoch_loss / len(train_data))
         loss_history.append( epoch_loss / len(train_data))
+    """
     
     ###SECOND TRAINING###
     
@@ -162,6 +163,7 @@ def main(args):
         epoch_loss = 0
         
         for b_num, (b_x, b_y) in enumerate(train_dataloader):
+            temp_ratio_list = []
             b_x = b_x.to(device)
             b_x = b_x.float()
             b_y = b_y.to(device)
@@ -177,12 +179,14 @@ def main(args):
             for i in minimas:
                 tot_len += len(i)
                 pos_eig += np.sum(np.array([1 if j > 0 else 0 for j in i]))
-            ratio_list.append(pos_eig/tot_len)
-            loss_list.append(loss.cpu().detach().numpy())
+            temp_ratio_list.append(pos_eig/tot_len)
             loss.backward()
             optimizer.step()
             print("Epoch", e, "Batch: ", b_num, "loss: ", loss.item(), end = '\r')
             epoch_loss += loss.item()
+        
+        ratio_list.append(np.mean(np.array(temp_ratio_list)))
+        loss_list.append(epoch_loss/len(train_data))
             
         torch.save(train_model, 'hw1-2_task3_step2_function_model.pkl')
         torch.save(optimizer.state_dict(), 'hw1-2_task3_step2_function_model.optim')
@@ -193,8 +197,12 @@ def main(args):
     
     np.save('loss', np.array(loss_list))
     np.save('minimal_ratio', np.array(ratio_list))
+
+    plt.scatter(ratio_list, loss_list)
+    #plt.ylim(0,0.002)
+    plt.savefig('task3.png', format='png')
+    plt.show()
         
-    
         
     return 
     
