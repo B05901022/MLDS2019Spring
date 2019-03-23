@@ -98,16 +98,18 @@ def main(args):
         y_pred = tf.convert_to_tensor(y_pred)
         
         model_weights = tf.concat([tf.reshape(i, [-1]) for i in model.trainable_variables], axis=0)
-        print(model_weights.shape)
-            
-        print("""
-              WOWOWOWOWOWOWOWOW
-              """)
-        
+                    
         weights = tf.convert_to_tensor(model_weights)
         
         #with tf.device('/cpu:0'): 
         loss = tf.keras.losses.categorical_crossentropy(y_test, y_pred)
+        
+        print(model_weights.shape)
+        print(loss.shape)
+        
+        print("""
+              WOWOWOWOWOWOWOWOW
+              """)
         
         hess = tf.hessians(loss, weights)
         
