@@ -91,7 +91,7 @@ def main(args):
     print('accuracy:%f'%test_result[1])
     y_pred = model.predict(x_test)
     
-    with tf.Session():
+    with tf.Session() as sess:
 
         # We first convert the numpy arrays to Tensorflow tensors
         y_test = tf.convert_to_tensor(y_test)
@@ -107,10 +107,10 @@ def main(args):
         loss = tf.convert_to_tensor(loss)
         
         print(model_weights.shape)
-        print(model_weights[:100].eval())
+        print(sess.run(model_weights[:100]))
         
         print(loss.shape)
-        print(loss[:100].eval())
+        print(sess.run(loss[:100]))
         
         print("""
               WOWOWOWOWOWOWOWOW
