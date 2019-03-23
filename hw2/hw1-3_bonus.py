@@ -99,10 +99,12 @@ def main(args):
         
         model_weights = tf.concat([tf.reshape(i, [-1]) for i in model.trainable_variables], axis=0)
                     
-        weights = model_weights#tf.convert_to_tensor()
+        weights = tf.convert_to_tensor(model_weights)
         
         #with tf.device('/cpu:0'): 
         loss = tf.keras.losses.categorical_crossentropy(y_test, y_pred)
+        
+        loss = tf.convert_to_tensor(loss)
         
         """
         print(model_weights.shape)
