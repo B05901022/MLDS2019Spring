@@ -31,20 +31,20 @@ ADAMPARAM = {'learning_rate':0.001, 'beta1':0.9, 'beta2':0.999, 'epsilon':1e-08}
 
 ###MODEL###
 model1 = Sequential()
-model1.add(Conv2D(filters=32, kernel_size=(3,3), strides=(1,1), padding = 'valid', input_shape=(28,28,1)))#26*26
+model1.add(Conv2D(filters=4, kernel_size=(3,3), strides=(1,1), padding = 'valid', input_shape=(28,28,1)))#26*26
 model1.add(LeakyReLU())
-model1.add(Conv2D(filters=32, kernel_size=(3,3), strides=(1,1), padding = 'valid'))#24*24
+model1.add(Conv2D(filters=4, kernel_size=(3,3), strides=(1,1), padding = 'valid'))#24*24
 model1.add(LeakyReLU())
 model1.add(MaxPooling2D(pool_size=(2,2)))#12*12
-model1.add(Conv2D(filters=64, kernel_size=(3,3), strides=(1,1), padding = 'valid', input_shape=(28,28,1)))#10*10
+model1.add(Conv2D(filters=8, kernel_size=(3,3), strides=(1,1), padding = 'valid', input_shape=(28,28,1)))#10*10
 model1.add(LeakyReLU())
-model1.add(Conv2D(filters=64, kernel_size=(3,3), strides=(1,1), padding = 'valid'))#8*8
+model1.add(Conv2D(filters=8, kernel_size=(3,3), strides=(1,1), padding = 'valid'))#8*8
 model1.add(LeakyReLU())
 model1.add(MaxPooling2D(pool_size=(2,2)))#4*4
 model1.add(Flatten())
-model1.add(Dense(128))
+model1.add(Dense(32))
 model1.add(LeakyReLU())
-model1.add(Dense(64))
+model1.add(Dense(16))
 model1.add(LeakyReLU())
 model1.add(Dense(10, activation='softmax'))
 
