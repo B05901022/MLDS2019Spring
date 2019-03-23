@@ -90,6 +90,20 @@ def main(args):
     test_result = model.evaluate(x_test, y_test)
     print('accuracy:%f'%test_result[1])
     y_pred = model.predict(x_test)
+    
+    with tf.Session():
+
+        # We first convert the numpy arrays to Tensorflow tensors
+        y_test = tf.convert_to_tensor(y_test)
+        y_pred = tf.convert_to_tensor(y_pred)
+    
+        loss = tf.keras.losses.categorical_crossentropy(y_test, y_pred)
+        
+        hess = tf.hessians(loss, y_pred)[0]
+        hess = tf.diag_part(hess)
+    
+        print(hess.eval())
+    """
     y_pred = tf.Variable(y_pred)
     y_test = tf.Variable(y_test)
     x_test = tf.Variable(x_test)
@@ -97,6 +111,7 @@ def main(args):
     hess = tf.diag_part(hess)
     print(hess.eval())
     print()
+    """
     return
 
 if __name__ == "__main__":
