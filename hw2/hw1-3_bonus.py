@@ -26,7 +26,7 @@ x_test = x_test[:500].reshape(500,28,28,1) / 255.0
 y_test = tf.keras.utils.to_categorical(y_test[:500])
 
 ###HYPERPARAMETER###
-EPOCH = 1
+EPOCH = 20
 ADAMPARAM = {'learning_rate':0.001, 'beta1':0.9, 'beta2':0.999, 'epsilon':1e-08}
 
 ###MODEL###
