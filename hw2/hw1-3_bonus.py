@@ -92,7 +92,7 @@ def main(args):
         test_result = model.evaluate(x_test, y_test)
         print('accuracy:%f'%test_result[1])
         x_test = tf.convert_to_tensor(x_test)
-        y_pred = model.predict(x_test)
+        y_pred = model.apply(x_test)
         print(type(y_pred))
     
         y_test = tf.convert_to_tensor(y_test)
