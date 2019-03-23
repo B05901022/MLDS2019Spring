@@ -92,7 +92,7 @@ def main(args):
     print(tf.hessians(tf.keras.losses.categorical_crossentropy(y_test, y_pred), x_test))
     return
 
-if __name__ = "__main__":
+if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--model_type', '-type', type=str, default='1')
     parser.add_argument('--batch_size', '-b', type=int, default=500)
