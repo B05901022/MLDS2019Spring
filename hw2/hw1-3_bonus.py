@@ -104,12 +104,12 @@ def main(args):
               WOWOWOWOWOWOWOWOW
               """)
         
-        weights = tf.convert_to_tensor(model.trainable_variables)
+        #weights = tf.convert_to_tensor(model_weights)
         
         #with tf.device('/cpu:0'): 
         loss = tf.keras.losses.categorical_crossentropy(y_test, y_pred)
         
-        hess = tf.hessians(loss, weights)
+        hess = tf.hessians(loss, model_weights)
         
         print(len(hess))
     """
