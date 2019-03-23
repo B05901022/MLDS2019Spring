@@ -100,7 +100,7 @@ def main(args):
         #with tf.device('/cpu:0'): 
         loss = tf.keras.losses.categorical_crossentropy(y_test, y_pred)
         
-        hess = tf.hessians(loss, y_pred)
+        hess = tf.hessians(loss, tf.trainable_variables())
         
         print(len(hess))
     """
