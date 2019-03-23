@@ -96,7 +96,7 @@ def main(args):
         # We first convert the numpy arrays to Tensorflow tensors
         y_test = tf.convert_to_tensor(y_test)
         y_pred = tf.convert_to_tensor(y_pred)
-        print(len(model.trainable_varialbes))
+        print(len(model.trainable_variables))
         
         weights = tf.convert_to_tensor(model.trainable_variables)
         
