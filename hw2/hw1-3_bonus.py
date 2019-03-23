@@ -90,9 +90,9 @@ def main(args):
     test_result = model.evaluate(x_test, y_test)
     print('accuracy:%f'%test_result[1])
     y_pred = model.predict(x_test)
-    y_pred = tf.Variable(y_pred)
-    y_test = tf.Variable(y_test)
-    x_test = tf.Variable(x_test)
+    y_pred = tf.Tensor(y_pred)
+    y_test = tf.Tensor(y_test)
+    x_test = tf.Tensor(x_test)
     print(tf.hessians(tf.keras.losses.categorical_crossentropy(y_test, y_pred), x_test))
     return
 
