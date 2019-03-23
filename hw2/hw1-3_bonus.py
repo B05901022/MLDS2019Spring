@@ -22,8 +22,8 @@ mnist = tf.keras.datasets.mnist
 (x_train, y_train),(x_test, y_test) = mnist.load_data()
 x_train = x_train.reshape(60000,28,28,1) / 255.0
 y_train = tf.keras.utils.to_categorical(y_train)
-x_test = x_test.reshape(10000,28,28,1) / 255.0
-y_test = tf.keras.utils.to_categorical(y_test)
+x_test = x_test[:500].reshape(500,28,28,1) / 255.0
+y_test = tf.keras.utils.to_categorical(y_test[:500])
 
 ###HYPERPARAMETER###
 EPOCH = 10
@@ -95,13 +95,13 @@ def main(args):
         y_test = tf.convert_to_tensor(y_test)
         y_pred = tf.convert_to_tensor(y_pred)
         
-        with tf.device('/cpu:0'): 
-            loss = tf.keras.losses.categorical_crossentropy(y_test, y_pred)
+        #with tf.device('/cpu:0'): 
+        loss = tf.keras.losses.categorical_crossentropy(y_test, y_pred)
         
-            hess = tf.hessians(loss, y_pred)[0]
-            hess = tf.diag_part(hess)
+        hess = tf.hessians(loss, y_pred)[0]
+        hess = tf.diag_part(hess)
         
-            print(hess.eval())
+        print(hess.eval())
     """
     y_pred = tf.Variable(y_pred)
     y_test = tf.Variable(y_test)
