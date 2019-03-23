@@ -105,7 +105,10 @@ def main(args):
         loss = tf.keras.losses.categorical_crossentropy(y_test, y_pred)
         
         print(model_weights.shape)
+        print(model_weights[:100])
+        
         print(loss.shape)
+        print(loss[:100])
         
         print("""
               WOWOWOWOWOWOWOWOW
