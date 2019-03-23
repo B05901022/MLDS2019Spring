@@ -73,25 +73,28 @@ model2.add(LeakyReLU())
 model2.add(Dense(10, activation='softmax'))
 
 def main(args):
-    global x_test, y_test
-    
-    BATCHSIZE = args.batch_size
-    
-    model_chosen = args.model_type
-    if model_chosen == '1':
-        model = model1
-    elif model_chosen == '2':
-        model = model2
-
-    model.compile(optimizer=tf.train.AdamOptimizer(**ADAMPARAM),
-                  loss='categorical_crossentropy',
-                  metrics=['accuracy'])
-    model.fit(x_train, y_train, epochs=EPOCH, batch_size=BATCHSIZE)
-    test_result = model.evaluate(x_test, y_test)
-    print('accuracy:%f'%test_result[1])
-    y_pred = model.predict(x_test)
-    
     with tf.Session() as sess:
+        sess.run(tf.global_variables_initializer())
+        global x_test, y_test
+        
+        BATCHSIZE = args.batch_size
+        
+        model_chosen = args.model_type
+        if model_chosen == '1':
+            model = model1
+        elif model_chosen == '2':
+            model = model2
+    
+        model.compile(optimizer=tf.train.AdamOptimizer(**ADAMPARAM),
+                      loss='categorical_crossentropy',
+                      metrics=['accuracy'])
+        model.fit(x_train, y_train, epochs=EPOCH, batch_size=BATCHSIZE)
+        test_result = model.evaluate(x_test, y_test)
+        print('accuracy:%f'%test_result[1])
+        y_pred = model.predict(x_test)
+    
+    
+        
 
         # We first convert the numpy arrays to Tensorflow tensors
         y_test = tf.convert_to_tensor(y_test)
