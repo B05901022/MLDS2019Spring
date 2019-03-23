@@ -42,8 +42,6 @@ model1.add(Conv2D(filters=8, kernel_size=(3,3), strides=(1,1), padding = 'valid'
 model1.add(LeakyReLU())
 model1.add(MaxPooling2D(pool_size=(2,2)))#4*4
 model1.add(Flatten())
-model1.add(Dense(32))
-model1.add(LeakyReLU())
 model1.add(Dense(16))
 model1.add(LeakyReLU())
 model1.add(Dense(10, activation='softmax'))
