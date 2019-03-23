@@ -91,7 +91,7 @@ def main(args):
         model.fit(x_train, y_train, epochs=EPOCH, batch_size=BATCHSIZE)
         test_result = model.evaluate(x_test, y_test)
         print('accuracy:%f'%test_result[1])
-        x_test = tf.convert_to_tensor(x_test).astype(tf.float32)
+        x_test = tf.convert_to_tensor(x_test, dtype=tf.float32)
         y_pred = model.apply(x_test)
         print(type(y_pred))
     
