@@ -76,7 +76,11 @@ def main(args):
     
     BATCHSIZE = args.batch_size
     
-    model = args.model_type
+    model_chosen = args.model_type
+    if model_chosen == '1':
+        model = model1
+    elif model_chosen == '2':
+        model = model2
     
     model.compile(optimizer=tf.train.AdamOptimizer(**ADAMPARAM),
                   loss='categorical_crossentropy',
