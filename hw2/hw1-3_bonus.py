@@ -96,11 +96,12 @@ def main(args):
         # We first convert the numpy arrays to Tensorflow tensors
         y_test = tf.convert_to_tensor(y_test)
         y_pred = tf.convert_to_tensor(y_pred)
+        weights = tf.convert_to_tensor(model.trainable_weights)
         
         #with tf.device('/cpu:0'): 
         loss = tf.keras.losses.categorical_crossentropy(y_test, y_pred)
         
-        hess = tf.hessians(loss, model.trainable_weights)
+        hess = tf.hessians(loss, weights)
         
         print(len(hess))
     """
