@@ -107,7 +107,7 @@ def main(args):
         loss = tf.keras.losses.categorical_crossentropy(y_test, y_pred)
         
         
-        hess = tf.hessians(loss, model_weights)
+        hess = tf.hessians(loss, [model_weights[:16741], model_weights[16741:]])
         
         print(len(hess))
     """
