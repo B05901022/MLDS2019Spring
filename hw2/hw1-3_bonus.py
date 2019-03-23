@@ -97,7 +97,7 @@ if __name__ == "__main__":
     parser.add_argument('--model_type', '-type', type=str, default='1')
     parser.add_argument('--batch_size', '-b', type=int, default=500)
     args = parser.parse_args()
-    main()
+    main(args)
     
 
 
