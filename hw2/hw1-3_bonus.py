@@ -92,6 +92,8 @@ def main(args):
         test_result = model.evaluate(x_test, y_test)
         print('accuracy:%f'%test_result[1])
         y_pred = model.predict(x_test)
+        print(type(y_pred))
+        y_pred = tf.convert_to_tensor([tf.convert_to_tensor(i) for i in y_pred])
     
         y_test = tf.convert_to_tensor(y_test)
         model_weights = tf.concat([tf.reshape(i, [-1]) for i in model.trainable_variables], axis=0)
