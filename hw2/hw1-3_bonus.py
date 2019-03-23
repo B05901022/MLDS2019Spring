@@ -73,6 +73,7 @@ model2.add(LeakyReLU())
 model2.add(Dense(10, activation='softmax'))
 
 def main(args):
+    global x_test, y_test
     
     BATCHSIZE = args.batch_size
     
@@ -89,6 +90,9 @@ def main(args):
     test_result = model.evaluate(x_test, y_test)
     print('accuracy:%f'%test_result[1])
     y_pred = model.predict(x_test)
+    y_pred = tf.Variable(y_pred)
+    y_test = tf.Variable(y_test)
+    x_test = tf.Variable(x_test)
     print(tf.hessians(tf.keras.losses.categorical_crossentropy(y_test, y_pred), x_test))
     return
 
