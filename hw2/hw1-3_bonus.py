@@ -106,13 +106,11 @@ def main(args):
         
         loss = tf.convert_to_tensor(loss)
         
-        """
         print(model_weights.shape)
-        print(model_weights[:100])
+        print(model_weights[:100].eval())
         
         print(loss.shape)
-        print(loss[:100])
-        """
+        print(loss[:100].eval())
         
         print("""
               WOWOWOWOWOWOWOWOW
