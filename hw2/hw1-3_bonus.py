@@ -93,21 +93,14 @@ def main(args):
         print('accuracy:%f'%test_result[1])
         y_pred = model.predict(x_test)
     
-    
-        
-
-        # We first convert the numpy arrays to Tensorflow tensors
         y_test = tf.convert_to_tensor(y_test)
-        #y_pred = tf.convert_to_tensor(y_pred)
         
         model_weights = tf.concat([tf.reshape(i, [-1]) for i in model.trainable_variables], axis=0)
                     
-        
-        #with tf.device('/cpu:0'): 
         loss = tf.keras.losses.categorical_crossentropy(y_test, y_pred)
         
         
-        hess = tf.hessians(loss, [model_weights[:16741], model_weights[16741:]])
+        hess = tf.hessians(loss, [model.trainable_variables[0], model.trainable_variables[2]])
         
         print(len(hess))
     """
