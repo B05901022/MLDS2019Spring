@@ -93,7 +93,8 @@ def main(args):
     y_pred = tf.Variable(y_pred)
     y_test = tf.Variable(y_test)
     x_test = tf.Variable(x_test)
-    print(tf.hessians(tf.keras.losses.categorical_crossentropy(y_test, y_pred), y_pred))
+    print(tf.hessians(tf.keras.losses.categorical_crossentropy(y_test, y_pred), y_pred)[0])
+    print(tf.hessians(tf.keras.losses.categorical_crossentropy(y_test, y_pred), y_pred)[1])
     return
 
 if __name__ == "__main__":
