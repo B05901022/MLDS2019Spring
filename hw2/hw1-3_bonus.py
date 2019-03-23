@@ -25,7 +25,7 @@ x_test = x_test.reshape(10000,28,28,1) / 255.0
 y_test = tf.keras.utils.to_categorical(y_test)
 
 ###HYPERPARAMETER###
-EPOCH = 30
+EPOCH = 10
 BATCHSIZE = 5000
 ADAMPARAM = {'learning_rate':0.001, 'beta1':0.9, 'beta2':0.999, 'epsilon':1e-08}
 
@@ -52,7 +52,8 @@ model.compile(optimizer=tf.train.AdamOptimizer(**ADAMPARAM),
               metrics=['accuracy'])
 
 model.fit(x_train, y_train, epochs=EPOCH, batch_size=BATCHSIZE)
-model.evaluate(x_test, y_test)
+test_result = model.evaluate(x_test, y_test)
+print('accuracy:%f'%test_result[1])
 
 
 
