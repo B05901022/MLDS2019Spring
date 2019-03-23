@@ -8,6 +8,7 @@ Created on Fri Mar 22 15:40:53 2019
 import tensorflow as tf
 from tensorflow.keras.layers import Conv2D, BatchNormalization, Dense, Flatten, LeakyReLU, MaxPooling2D, Dropout, Softmax
 from tensorflow.keras import Sequential
+import argparse
 
 ###Import MNIST data###
 """
@@ -26,35 +27,74 @@ y_test = tf.keras.utils.to_categorical(y_test)
 
 ###HYPERPARAMETER###
 EPOCH = 10
-BATCHSIZE = 5000
 ADAMPARAM = {'learning_rate':0.001, 'beta1':0.9, 'beta2':0.999, 'epsilon':1e-08}
 
 ###MODEL###
-model = Sequential()
-model.add(Conv2D(filters=32, kernel_size=(3,3), strides=(1,1), padding = 'valid', input_shape=(28,28,1)))#26*26
-model.add(LeakyReLU())
-model.add(Conv2D(filters=32, kernel_size=(3,3), strides=(1,1), padding = 'valid'))#24*24
-model.add(LeakyReLU())
-model.add(MaxPooling2D(pool_size=(2,2)))#12*12
-model.add(Conv2D(filters=64, kernel_size=(3,3), strides=(1,1), padding = 'valid', input_shape=(28,28,1)))#10*10
-model.add(LeakyReLU())
-model.add(Conv2D(filters=64, kernel_size=(3,3), strides=(1,1), padding = 'valid'))#8*8
-model.add(LeakyReLU())
-model.add(MaxPooling2D(pool_size=(2,2)))#4*4
-model.add(Flatten())
-model.add(Dense(128))
-model.add(LeakyReLU())
-model.add(Dense(64))
-model.add(LeakyReLU())
-model.add(Dense(10, activation='softmax'))
-model.compile(optimizer=tf.train.AdamOptimizer(**ADAMPARAM),
-              loss='categorical_crossentropy',
-              metrics=['accuracy'])
+model1 = Sequential()
+model1.add(Conv2D(filters=32, kernel_size=(3,3), strides=(1,1), padding = 'valid', input_shape=(28,28,1)))#26*26
+model1.add(LeakyReLU())
+model1.add(Conv2D(filters=32, kernel_size=(3,3), strides=(1,1), padding = 'valid'))#24*24
+model1.add(LeakyReLU())
+model1.add(MaxPooling2D(pool_size=(2,2)))#12*12
+model1.add(Conv2D(filters=64, kernel_size=(3,3), strides=(1,1), padding = 'valid', input_shape=(28,28,1)))#10*10
+model1.add(LeakyReLU())
+model1.add(Conv2D(filters=64, kernel_size=(3,3), strides=(1,1), padding = 'valid'))#8*8
+model1.add(LeakyReLU())
+model1.add(MaxPooling2D(pool_size=(2,2)))#4*4
+model1.add(Flatten())
+model1.add(Dense(128))
+model1.add(LeakyReLU())
+model1.add(Dense(64))
+model1.add(LeakyReLU())
+model1.add(Dense(10, activation='softmax'))
 
-model.fit(x_train, y_train, epochs=EPOCH, batch_size=BATCHSIZE)
-test_result = model.evaluate(x_test, y_test)
-print('accuracy:%f'%test_result[1])
+model2 = Sequential()
+model2.add(Conv2D(filters=32, kernel_size=(3,3), strides=(1,1), padding = 'valid', input_shape=(28,28,1)))#26*26
+model2.add(LeakyReLU())
+model2.add(BatchNormalization())
+model2.add(Conv2D(filters=32, kernel_size=(3,3), strides=(1,1), padding = 'valid'))#24*24
+model2.add(LeakyReLU())
+model2.add(BatchNormalization())
+model2.add(MaxPooling2D(pool_size=(2,2)))#12*12
+model2.add(Conv2D(filters=64, kernel_size=(3,3), strides=(1,1), padding = 'valid', input_shape=(28,28,1)))#10*10
+model2.add(LeakyReLU())
+model2.add(BatchNormalization())
+model2.add(Conv2D(filters=64, kernel_size=(3,3), strides=(1,1), padding = 'valid'))#8*8
+model2.add(LeakyReLU())
+model2.add(BatchNormalization())
+model2.add(MaxPooling2D(pool_size=(2,2)))#4*4
+model2.add(Flatten())
+model2.add(Dense(128))
+model2.add(BatchNormalization())
+model2.add(LeakyReLU())
+model2.add(Dense(64))
+model2.add(BatchNormalization())
+model2.add(LeakyReLU())
+model2.add(Dense(10, activation='softmax'))
 
+def main(args):
+    
+    BATCHSIZE = args.batch_size
+    
+    model = args.model_type
+    
+    model.compile(optimizer=tf.train.AdamOptimizer(**ADAMPARAM),
+                  loss='categorical_crossentropy',
+                  metrics=['accuracy'])
+    model.fit(x_train, y_train, epochs=EPOCH, batch_size=BATCHSIZE)
+    test_result = model.evaluate(x_test, y_test)
+    print('accuracy:%f'%test_result[1])
+    y_pred = model.predict(x_test)
+    print(tf.hessians(tf.keras.losses.categorical_crossentropy(y_test, y_pred), x_test))
+    return
+
+if __name__ = "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--model_type', '-type', type=str, default='1')
+    parser.add_argument('--batch_size', '-b', type=int, default=500)
+    args = parser.parse_args()
+    main()
+    
 
 
     
