@@ -96,7 +96,7 @@ def main(args):
         # We first convert the numpy arrays to Tensorflow tensors
         y_test = tf.convert_to_tensor(y_test)
         y_pred = tf.convert_to_tensor(y_pred)
-        weights = tf.convert_to_tensor(model.trainable_weights)
+        weights = tf.convert_to_tensor(model.trainable_variables)
         
         #with tf.device('/cpu:0'): 
         loss = tf.keras.losses.categorical_crossentropy(y_test, y_pred)
