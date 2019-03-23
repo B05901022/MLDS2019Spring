@@ -27,7 +27,7 @@ y_test = tf.keras.utils.to_categorical(y_test)
 ###HYPERPARAMETER###
 EPOCH = 30
 BATCHSIZE = 5000
-ADAMPARAM = {'lr':0.001, 'betas':(0.9, 0.999), 'eps':1e-08}
+ADAMPARAM = {'learning_rate':0.001, 'beta1':0.9, 'beta2':0.999, 'epsilon':1e-08}
 
 ###MODEL###
 model = Sequential()
