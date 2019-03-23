@@ -98,7 +98,7 @@ def main(args):
         y_pred = tf.convert_to_tensor(y_pred)
         
         model_weights = tf.concat([tf.reshape(i, [-1]) for i in model.trainable_variables], axis=0)
-        print(len(model_weights))
+        print(model_weights.shape)
             
         print("""
               WOWOWOWOWOWOWOWOW
