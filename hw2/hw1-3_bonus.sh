@@ -1,0 +1,10 @@
+python3 hw1-3_bonus.py -type 1 -b 5
+python3 hw1-3_bonus.py -type 1 -b 50
+python3 hw1-3_bonus.py -type 1 -b 500
+python3 hw1-3_bonus.py -type 1 -b 5000
+python3 hw1-3_bonus.py -type 1 -b 50000
+python3 hw1-3_bonus.py -type 2 -b 5
+python3 hw1-3_bonus.py -type 2 -b 50
+python3 hw1-3_bonus.py -type 2 -b 500
+python3 hw1-3_bonus.py -type 2 -b 5000
+python3 hw1-3_bonus.py -type 2 -b 50000
