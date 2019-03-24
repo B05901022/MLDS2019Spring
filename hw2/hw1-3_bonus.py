@@ -27,7 +27,6 @@ x_test = x_test[:500].reshape(500,28,28,1) / 255.0
 y_test = tf.keras.utils.to_categorical(y_test[:500])
 
 ###HYPERPARAMETER###
-EPOCH = 20
 ADAMPARAM = {'learning_rate':0.001, 'beta1':0.9, 'beta2':0.999, 'epsilon':1e-08}
 
 ###MODEL###
@@ -43,7 +42,7 @@ model1.add(Conv2D(filters=32, kernel_size=(3,3), strides=(1,1), padding = 'valid
 model1.add(LeakyReLU())
 model1.add(MaxPooling2D(pool_size=(2,2)))#4*4
 model1.add(Flatten())
-model1.add(Dense(32))
+model1.add(Dense(16))
 model1.add(LeakyReLU())
 model1.add(Dense(16))
 model1.add(LeakyReLU())
@@ -65,7 +64,7 @@ model2.add(LeakyReLU())
 model2.add(BatchNormalization())
 model2.add(MaxPooling2D(pool_size=(2,2)))#4*4
 model2.add(Flatten())
-model2.add(Dense(32))
+model2.add(Dense(16))
 model2.add(BatchNormalization())
 model2.add(LeakyReLU())
 model2.add(Dense(16))
@@ -78,6 +77,7 @@ def main(args):
         sess.run(tf.global_variables_initializer())
         global x_test, y_test
         
+        EPOCH = args.epoch
         BATCHSIZE = args.batch_size
         
         model_chosen = args.model_type
@@ -121,7 +121,7 @@ def main(args):
         hess_norm = sess.run(hess_norm)
         sharpness = max(hess_norm)*(1e-8)/2/(1+test_result[0])
         
-        with open('sharpness.csv', 'w') as f:
+        with open('sharpness.csv', 'a') as f:
             print(args.model_type, end=',', file=f)
             print(args.batch_size, end=',', file=f)
             print(train_result[0], end=',', file=f)
@@ -136,6 +136,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--model_type', '-type', type=str, default='1')
     parser.add_argument('--batch_size', '-b', type=int, default=500)
+    parser.add_argument('--epoch', '-e', type=int, default=20)
     args = parser.parse_args()
     main(args)
     
