@@ -97,11 +97,11 @@ def main(args):
         #print(type(y_pred))
     
         y_test = tf.convert_to_tensor(y_test)
-        model_weights = tf.concat([tf.reshape(i, [-1]) for i in model.trainable_variables], axis=0)
+        #model_weights = tf.concat([tf.reshape(i, [-1]) for i in model.trainable_variables], axis=0)
                     
         loss = tf.keras.losses.categorical_crossentropy(y_test, y_pred)
         
-        grad = tf.gradients(loss, model.trainable_variables)
+        #grad = tf.gradients(loss, model.trainable_variables)
         #print(grad)
         #input()
         hess = tf.hessians(loss, model.trainable_variables)
@@ -109,11 +109,9 @@ def main(args):
         print(len(hess))
         
         print(type(hess))
-        hess_norm = []
-        for i in hess:
-            norm = np.linalg.norm(sess.run(i), 2)
-            hess_norm.append(norm)
-        print(max(hess_norm)*1e-8/2/(1+sess.run(loss)))
+        
+        hess_norm = tf.norm(hess, 2)
+        print(hess_norm*1e-8/2/(1+sess.run(loss)))
         
     return
 
