@@ -106,11 +106,11 @@ def main(args):
         hess = tf.hessians(loss, model.trainable_variables)
         
         print(len(hess))
-        print(sess.run(hess[0]))
-        print("""
-              WOWOWOOWOWOWOWOWOWOOW
-              """)
-        print(sess.run(hess[1]))
+        
+        print(type(hess))
+        for i in hess:
+            print(type(sess.run(i)))
+        
     return
 
 if __name__ == "__main__":
