@@ -113,8 +113,8 @@ def main(args):
         for i in hess:
             norm = tf.norm(i, 2)
             hess_norm.append(norm)
-        print(sess.run(hess_norm))
-        #print(hess_norm*1e-8/2/(1+sess.run(loss)))
+        hess_norm = sess.run(hess_norm)
+        print(max(hess_norm)*1e-8/2/(1+sess.run(loss)))
         
     return
 
