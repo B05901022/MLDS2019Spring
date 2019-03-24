@@ -109,9 +109,12 @@ def main(args):
         print(len(hess))
         
         print(type(hess))
-        
-        hess_norm = tf.norm(hess, 2)
-        print(hess_norm*1e-8/2/(1+sess.run(loss)))
+        hess_norm = []
+        for i in hess:
+            norm = tf.norm(i, 2)
+            hess_norm.append(norm)
+        print(hess_norm)
+        #print(hess_norm*1e-8/2/(1+sess.run(loss)))
         
     return
 
