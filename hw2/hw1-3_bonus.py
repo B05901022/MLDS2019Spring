@@ -49,25 +49,25 @@ model1.add(LeakyReLU())
 model1.add(Dense(10, activation='softmax'))
 
 model2 = Sequential()
-model2.add(Conv2D(filters=32, kernel_size=(3,3), strides=(1,1), padding = 'valid', input_shape=(28,28,1)))#26*26
+model2.add(Conv2D(filters=16, kernel_size=(3,3), strides=(1,1), padding = 'valid', input_shape=(28,28,1)))#26*26
 model2.add(LeakyReLU())
 model2.add(BatchNormalization())
-model2.add(Conv2D(filters=32, kernel_size=(3,3), strides=(1,1), padding = 'valid'))#24*24
+model2.add(Conv2D(filters=16, kernel_size=(3,3), strides=(1,1), padding = 'valid'))#24*24
 model2.add(LeakyReLU())
 model2.add(BatchNormalization())
 model2.add(MaxPooling2D(pool_size=(2,2)))#12*12
-model2.add(Conv2D(filters=64, kernel_size=(3,3), strides=(1,1), padding = 'valid', input_shape=(28,28,1)))#10*10
+model2.add(Conv2D(filters=32, kernel_size=(3,3), strides=(1,1), padding = 'valid', input_shape=(28,28,1)))#10*10
 model2.add(LeakyReLU())
 model2.add(BatchNormalization())
-model2.add(Conv2D(filters=64, kernel_size=(3,3), strides=(1,1), padding = 'valid'))#8*8
+model2.add(Conv2D(filters=32, kernel_size=(3,3), strides=(1,1), padding = 'valid'))#8*8
 model2.add(LeakyReLU())
 model2.add(BatchNormalization())
 model2.add(MaxPooling2D(pool_size=(2,2)))#4*4
 model2.add(Flatten())
-model2.add(Dense(128))
+model2.add(Dense(32))
 model2.add(BatchNormalization())
 model2.add(LeakyReLU())
-model2.add(Dense(64))
+model2.add(Dense(16))
 model2.add(BatchNormalization())
 model2.add(LeakyReLU())
 model2.add(Dense(10, activation='softmax'))
@@ -93,7 +93,7 @@ def main(args):
         print('accuracy:%f'%test_result[1])
         x_test = tf.convert_to_tensor(x_test, dtype=tf.float32)
         y_pred = model.apply(x_test)
-        print(type(y_pred))
+        #print(type(y_pred))
     
         y_test = tf.convert_to_tensor(y_test)
         model_weights = tf.concat([tf.reshape(i, [-1]) for i in model.trainable_variables], axis=0)
@@ -101,20 +101,16 @@ def main(args):
         loss = tf.keras.losses.categorical_crossentropy(y_test, y_pred)
         
         grad = tf.gradients(loss, model.trainable_variables)
-        print(grad)
-        input()
+        #print(grad)
+        #input()
         hess = tf.hessians(loss, model.trainable_variables)
         
         print(len(hess))
-    """
-    y_pred = tf.Variable(y_pred)
-    y_test = tf.Variable(y_test)
-    x_test = tf.Variable(x_test)
-    hess = tf.hessians(tf.keras.losses.categorical_crossentropy(y_test, y_pred), y_pred)[0]
-    hess = tf.diag_part(hess)
-    print(hess.eval())
-    print()
-    """
+        print(sess.run(hess[0]))
+        print("""
+              WOWOWOOWOWOWOWOWOWOOW
+              """)
+        print(sess.run(hess[1]))
     return
 
 if __name__ == "__main__":
