@@ -91,7 +91,13 @@ def main(args):
                       metrics=['accuracy'])
         model.fit(x_train, y_train, epochs=EPOCH, batch_size=BATCHSIZE)
         test_result = model.evaluate(x_test, y_test)
-        print('accuracy:%f'%test_result[1])
+        train_result = model.evaluate(x_train, y_train)
+        print('training accuracy:%f'%test_result[0])
+        print('training loss:%f'%test_result[1])
+        print('testing loss:%f'%test_result[0])
+        print('testing accuracy:%f'%test_result[1])
+        
+        
         x_test = tf.convert_to_tensor(x_test, dtype=tf.float32)
         y_pred = model.apply(x_test)
         #print(type(y_pred))
@@ -108,13 +114,18 @@ def main(args):
         
         print(len(hess))
         
-        print(type(hess))
+        #print(type(hess))
         hess_norm = []
         for i in hess:
             norm = tf.norm(i, 2)
             hess_norm.append(norm)
         hess_norm = sess.run(hess_norm)
-        print(max(hess_norm)*1e-8/2/(1+sess.run(loss)))
+        sharpness = max(hess_norm)*1e-8/2/(1+np.sum(sess.run(loss)))
+        
+        with open('sharpness.csv', 'w') as f:
+            print(args.model_type, args.batch_size, \
+                  train_result[0], train_result[1], test_result[0], test_result[1], \
+                  sharpness, file=f)
         
     return
 
