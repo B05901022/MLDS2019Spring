@@ -119,7 +119,7 @@ def main(args):
             norm = tf.norm(i, 2)
             hess_norm.append(norm)
         hess_norm = sess.run(hess_norm)
-        sharpness = max(hess_norm)*1e-8/2/(1+np.sum(sess.run(loss)))
+        sharpness = max(hess_norm)*(1e-8)/2/(1+test_result[0])
         
         with open('sharpness.csv', 'w') as f:
             print(args.model_type, end=',', file=f)
