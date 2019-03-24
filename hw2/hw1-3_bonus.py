@@ -9,6 +9,7 @@ import tensorflow as tf
 from tensorflow.keras.layers import Conv2D, BatchNormalization, Dense, Flatten, LeakyReLU, MaxPooling2D, Dropout, Softmax
 from tensorflow.keras import Sequential
 import argparse
+import numpy as np
 
 ###Import MNIST data###
 """
@@ -108,8 +109,11 @@ def main(args):
         print(len(hess))
         
         print(type(hess))
+        hess_norm = []
         for i in hess:
-            print(type(sess.run(i)))
+            norm = np.linalg.norm(sess.run(i), 2)
+            hess_norm.append(norm)
+        print(max(hess_norm)*1e-8/2/(1+sess.run(loss)))
         
     return
 
