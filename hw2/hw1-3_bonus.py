@@ -48,28 +48,59 @@ model1.add(Dense(16))
 model1.add(LeakyReLU())
 model1.add(Dense(10, activation='softmax'))
 
+"""
 model2 = Sequential()
 model2.add(Conv2D(filters=16, kernel_size=(3,3), strides=(1,1), padding = 'valid', input_shape=(28,28,1)))#26*26
 model2.add(LeakyReLU())
 model2.add(BatchNormalization())
+model2.add(Dropout(0.5))
 model2.add(Conv2D(filters=16, kernel_size=(3,3), strides=(1,1), padding = 'valid'))#24*24
 model2.add(LeakyReLU())
 model2.add(BatchNormalization())
+model2.add(Dropout(0.5))
 model2.add(MaxPooling2D(pool_size=(2,2)))#12*12
 model2.add(Conv2D(filters=32, kernel_size=(3,3), strides=(1,1), padding = 'valid', input_shape=(28,28,1)))#10*10
 model2.add(LeakyReLU())
 model2.add(BatchNormalization())
+model2.add(Dropout(0.5))
 model2.add(Conv2D(filters=32, kernel_size=(3,3), strides=(1,1), padding = 'valid'))#8*8
 model2.add(LeakyReLU())
 model2.add(BatchNormalization())
+model2.add(Dropout(0.5))
 model2.add(MaxPooling2D(pool_size=(2,2)))#4*4
 model2.add(Flatten())
 model2.add(Dense(16))
-model2.add(BatchNormalization())
 model2.add(LeakyReLU())
+model2.add(BatchNormalization())
+model2.add(Dropout(0.5))
 model2.add(Dense(16))
-model2.add(BatchNormalization())
 model2.add(LeakyReLU())
+model2.add(BatchNormalization())
+model2.add(Dense(10, activation='softmax'))
+"""
+
+model2 = Sequential()
+model2.add(Conv2D(filters=16, kernel_size=(3,3), strides=(1,1), padding = 'valid', input_shape=(28,28,1)))#26*26
+model2.add(LeakyReLU())
+model2.add(Dropout(0.3))
+model2.add(Conv2D(filters=16, kernel_size=(3,3), strides=(1,1), padding = 'valid'))#24*24
+model2.add(LeakyReLU())
+model2.add(Dropout(0.3))
+model2.add(MaxPooling2D(pool_size=(2,2)))#12*12
+model2.add(Conv2D(filters=32, kernel_size=(3,3), strides=(1,1), padding = 'valid', input_shape=(28,28,1)))#10*10
+model2.add(LeakyReLU())
+model2.add(Dropout(0.3))
+model2.add(Conv2D(filters=32, kernel_size=(3,3), strides=(1,1), padding = 'valid'))#8*8
+model2.add(LeakyReLU())
+model2.add(Dropout(0.3))
+model2.add(MaxPooling2D(pool_size=(2,2)))#4*4
+model2.add(Flatten())
+model2.add(Dense(16))
+model2.add(LeakyReLU())
+model2.add(Dropout(0.3))
+model2.add(Dense(16))
+model2.add(LeakyReLU())
+model2.add(Dropout(0.3))
 model2.add(Dense(10, activation='softmax'))
 
 def main(args):
