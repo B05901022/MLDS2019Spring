@@ -11,8 +11,8 @@ import pandas as pd
 
 results = pd.read_csv(open('sharpness.csv', 'r'))
 
-results_1 = results[4:8]
-results_2 = results[12:16]
+results_1 = results[:8]
+results_2 = results[8:]
 
 results_plot = results_2
 
