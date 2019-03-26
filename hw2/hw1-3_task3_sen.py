@@ -33,7 +33,7 @@ def train(num,x_train,x_test,y_train,y_test):
         model.compile(optimizer='adam',
                       loss='categorical_crossentropy',
                       metrics=['accuracy'])
-        a=model.fit(x_train,y_train,epochs=50, batch_size=2**num,
+        a=model.fit(x_train,y_train,epochs=25, batch_size=2**num,
                     validation_data=(x_test,y_test))
         x_test = tf.convert_to_tensor(x_test, dtype=tf.float32)
         y_pred = model.apply(x_test)
@@ -45,7 +45,7 @@ def train(num,x_train,x_test,y_train,y_test):
             grad_list.append(tf.norm(i,2))
         grad_list=sess.run(grad_list)
     np.save("model13_"+str(2**num),np.array([a.history["loss"][-1],a.history["acc"][-1],a.history["val_loss"][-1],a.history["val_acc"][-1]]))
-    np.save("norm_model"+str(2**num),max(grad_list))
+    np.save("norm_model_"+str(2**num),max(grad_list))
     K.clear_session()
 for i in range(3,14,1):
     train(i,x_train,x_test,y_train,y_test)
