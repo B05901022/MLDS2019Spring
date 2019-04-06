@@ -16,6 +16,7 @@ for filename in os.listdir(sys.argv[1]):
 """
 class S2VT(nn.Module):
     def __init__(self,
+                 attention,
                  batch_size,
                  e_layers,
                  e_hidden,
@@ -23,6 +24,7 @@ class S2VT(nn.Module):
                  d_hidden,
                  one_hot_length):
         super(S2VT,self).__init__()
+        self.attention=attention
         self.batch_size=batch_size
         self.encoder_layers=e_layers
         self.encoder_hidden=e_hidden
