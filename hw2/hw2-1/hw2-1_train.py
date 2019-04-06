@@ -16,6 +16,7 @@ import argparse
 import json
 import os
 import yaml
+from tqdm import tqdm
 
 import load_data
 import S2VT_model
@@ -60,7 +61,7 @@ def main(args):
         print("Epoch ", e+1)
         epoch_loss = 0
         
-        for b_num, (b_x, b_y) in enumerate(train_dataloader):
+        for b_num, (b_x, b_y) in enumerate(tqdm(train_dataloader)):
             b_x = b_x.to(device)
             b_y = b_y.to(device)
             optimizer.zero_grad()
