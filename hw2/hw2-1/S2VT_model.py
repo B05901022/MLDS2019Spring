@@ -58,7 +58,7 @@ class S2VT(nn.Module):
     def forward(self,input_feature,max_len,input_fromavi):
         sentence=[]
         """Encoding"""
-        eencoded_data,(he,ce)=self.encoder(input_data,(self.encoder_h,self.encoder_c))
+        eencoded_data,(he,ce)=self.encoder(input_feature,(self.encoder_h,self.encoder_c))
         eeinput_data=self.add_pad(input_feature,1)
         decoded_data,(hd,cd)=self.decoder(eeinput_data,(self.decoder_h,self.decoder_c))
         """Decoding""" 
