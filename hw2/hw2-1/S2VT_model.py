@@ -44,12 +44,12 @@ class S2VT(nn.Module):
     def add_pad(self,input_feature,i,max_len=500):
         if i==1:
             pad=torch.zeros((self.decoder_layers,self.batch_size,self.decoder_hidden),
-                            dtype=torch.float32).cuda()
+                            dtype=torch.float32)#.cuda()
             processed=torch.cat((input_feature,pad),dim=2)
             return processed
         elif i==0:
             bos=torch.zeros((self.decoder_layers,self.batch_size,self.decoder_hidden),
-                            dtype=torch.float32).cuda()
+                            dtype=torch.float32)#.cuda()
             bos[:,:,2]=1
             return bos
             #processed=torch.cat((input_feature,bos),dim=2)
@@ -67,7 +67,7 @@ class S2VT(nn.Module):
         decoded_data,(hd,cd)=self.decoder(eeinput_data,(self.decoder_h,self.decoder_c))
         """Decoding""" 
         decoding_padding=torch.zeros((max_len,self.batch_size,self.decoder_hidden),
-                            dtype=torch.float32).cuda()
+                            dtype=torch.float32)#.cuda()
         ddinput_data,(he,ce)=self.encoder(decoding_padding,(he, ce))
         
         for s in range(max_len):        
@@ -101,7 +101,7 @@ class S2VT(nn.Module):
                              num__layers=self.decoder_layers)(eeinput_data,(self.decoder_h,self.decoder_c))
         """Decoding""" 
         decoding_padding=torch.zeros((max_len,self.batch_size,self.decoder_hidden),
-                            dtype=torch.float32).cuda()
+                            dtype=torch.float32)#.cuda()
         ddinput_data,(he,ce)=nn.LSTM(input_size=input_feature.size(),
                                 hidden_size=self.encoder_hidden,
                                 num_layers=self.encoder_layers)(decoding_padding,(he, ce))

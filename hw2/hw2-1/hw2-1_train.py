@@ -36,7 +36,6 @@ MODELPARAM = {'e_layers':512,'e_hidden':1024,'d_layers':512,'d_hidden':1024}
 LOADPARAM  = {'directory': '../../../hw2-1/MLDS_hw2_1_data', 'min_count':3, 'random_seed':None, 'batch_size':100}
        
 def main(args):
-    global EPOCH, BATCHSIZE, ADAMPARAM, MODELPARAM, LOADPARAM
     
     ###DATALOADER###
     train_dataloader, one_hot_len, max_len, word_dict = load_data.load_data(**LOADPARAM)
@@ -54,6 +53,8 @@ def main(args):
     
     ###LOSS FUNCTION###
     loss_func = nn.CrossEntropyLoss()
+    
+    print("Training starts...")
     
     for e in range(EPOCH):
         print("Epoch ", e+1)
@@ -75,6 +76,8 @@ def main(args):
         print("")   
         print("Epoch loss: ", epoch_loss / len(train_data))
         loss_history.append(epoch_loss / len(train_data))
+    
+    print("Training finished.")
     
     return 
     

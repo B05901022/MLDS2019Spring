@@ -64,7 +64,7 @@ def load_data(directory, min_count, random_seed, batch_size):
     for i in pop_words:
         word_dict.pop(i)
     one_hot_len = len(word_dict) + 3 #<BOS>, <EOS>, <UNK>
-    print('Finish word count...')
+    print('Word count finished.')
     print('Total word count : %d'%one_hot_len)
     
     #Creating one hot vector
@@ -92,7 +92,7 @@ def load_data(directory, min_count, random_seed, batch_size):
             max_len = max(max_len, len(sent_convert_list))
             caption_list.append(sent_convert_list)
         train_y.append(caption_list)
-        train_x.append(train_feat[video_id])
+        train_x.append(np.reshape(train_feat[video_id], (-1,)))
     print("")
     
     #Padding
@@ -133,5 +133,6 @@ def load_data(directory, min_count, random_seed, batch_size):
     DataLoader = Data.DataLoader(dataset = Dataset, batch_size=batch_size, shuffle=True, num_workers=1) 
     
     print('Loading finished.')            
+    print("")
     return DataLoader, one_hot_len, max_len, word_dict
         
