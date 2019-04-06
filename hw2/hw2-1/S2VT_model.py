@@ -58,17 +58,17 @@ class S2VT(nn.Module):
     def forward(self,input_feature,max_len,input_fromavi):
         sentence=[]
         """Encoding"""
-        eencoded_data,he,ce=self.encoder(input_feature,self.encoder_h,self.encoder_c)
+        eencoded_data,(he,ce)=self.encoder(input_feature,(self.encoder_h,self.encoder_c))
         eeinput_data=self.add_pad(input_feature,1)
-        decoded_data,hd,cd=self.decoder(eeinput_data,self.decoder_h,self.decoder_c)
+        decoded_data,(hd,cd)=self.decoder(eeinput_data,(self.decoder_h,self.decoder_c))
         """Decoding""" 
         decoding_padding=torch.zeros((max_len,self.batch_size,self.decoder_hidden),
                             dtype=torch.float32)
-        ddinput_data,he,ce=self.encoder(decoding_padding,he, ce)
+        ddinput_data,(he,ce)=self.encoder(decoding_padding,(he, ce))
         
         for s in range(max_len):        
             if s==0:
-                dencoded_data,hd,cd=self.decoder(ddinput_data,hd,cd)
+                dencoded_data,(hd,cd)=self.decoder(ddinput_data,(hd,cd))
                 input_embb=self.embedding_layer(self.add_pad(inputdata=None,i=0),1) 
                 input_fromlstm=(ddinput_data[s]).unsqueeze(0)
             else:
@@ -88,24 +88,24 @@ class S2VT(nn.Module):
     def test(self,input_feature,max_len):
         sentence=[]
         """Encoding"""
-        eencoded_data,he,ce=self.encoder(input_feature,self.encoder_h,self.encoder_c)
+        eencoded_data,(he,ce)=self.encoder(input_feature,(self.encoder_h,self.encoder_c))
         eeinput_data=self.add_pad(input_feature,1)
-        decoded_data,hd,cd=self.decoder(eeinput_data,self.decoder_h,self.decoder_c)
+        decoded_data,(hd,cd)=self.decoder(eeinput_data,(self.decoder_h,self.decoder_c))
         """Decoding""" 
         decoding_padding=torch.zeros((max_len,self.batch_size,self.decoder_hidden),
                             dtype=torch.float32)
-        ddinput_data,he,ce=self.encoder(decoding_padding,he, ce)
+        ddinput_data,(he,ce)=self.encoder(decoding_padding,(he, ce))
         
         for s in range(max_len):        
             if s==0:
-                dencoded_data,hd,cd=self.decoder(ddinput_data,hd,cd)
+                dencoded_data,(hd,cd)=self.decoder(ddinput_data,(hd,cd))
                 input_embb=self.embedding_layer(self.add_pad(i=0),1) 
                 input_fromlstm=(ddinput_data[s]).unsqueeze(0)
             else:
                 input_embb=decoded_data
                 input_fromlstm=(ddinput_data[s]).unsqueeze(0)
             eeinput_data=torch.cat((input_embb,input_fromlstm))
-            decoded_data,hd,cd=self.decoder(eeinput_data,hd,cd)
+            decoded_data,(hd,cd)=self.decoder(eeinput_data,(hd,cd))
             word=self.embedding_layer(decoded_data,0).squeeze(0)
             word=torch.nn.Softmax(dim=1)(word)
             sentence.append(word)
