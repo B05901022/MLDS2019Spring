@@ -15,14 +15,8 @@ for filename in os.listdir(sys.argv[1]):
     feature.append(np.load(sys.argv[1]+filename))
 """
 class S2VT(nn.Module):
-    def __init__(self,
-                 attention,
-                 batch_size,
-                 e_layers,
-                 e_hidden,
-                 d_layers,
-                 d_hidden,
-                 one_hot_length):
+    def __init__(self,attention,batch_size,e_layers,e_hidden,
+                 d_layers,d_hidden,one_hot_length):
         super(S2VT,self).__init__()
         self.attention=attention
         self.batch_size=batch_size
@@ -30,6 +24,7 @@ class S2VT(nn.Module):
         self.encoder_hidden=e_hidden
         self.decoder_layers=d_layers
         self.decoder_hidden=d_hidden
+        self.ohl=one_hot_length
         self.encoder_h=torch.zeros((e_layers,batch_size,e_hidden),dtype=torch.float32)
         self.encoder_c=torch.zeros((e_layers,batch_size,e_hidden),dtype=torch.float32)
         self.decoder_h=torch.zeros((d_layers,batch_size,d_hidden),dtype=torch.float32)
@@ -37,19 +32,20 @@ class S2VT(nn.Module):
         self.encoder=nn.LSTM(input_size=4096,
                                 hidden_size=e_hidden,
                                 num_layers=e_layers)
+
         self.decoder=nn.LSTM(input_size=d_hidden+e_hidden+25,
                                 hidden_size=d_hidden,
                                 num_layers=d_layers)
-        self.ohl=one_hot_length
     def add_pad(self,input_feature,i,max_len=500):
         if i==1:
             pad=torch.zeros((self.decoder_layers,self.batch_size,self.decoder_hidden),
-                            dtype=torch.float32)#.cuda()
+                            dtype=torch.float32)
+        
             processed=torch.cat((input_feature,pad),dim=2)
             return processed
         elif i==0:
             bos=torch.zeros((self.decoder_layers,self.batch_size,self.decoder_hidden),
-                            dtype=torch.float32)#.cuda()
+                            dtype=torch.float32)
             bos[:,:,2]=1
             return bos
             #processed=torch.cat((input_feature,bos),dim=2)
@@ -67,7 +63,7 @@ class S2VT(nn.Module):
         decoded_data,(hd,cd)=self.decoder(eeinput_data,(self.decoder_h,self.decoder_c))
         """Decoding""" 
         decoding_padding=torch.zeros((max_len,self.batch_size,self.decoder_hidden),
-                            dtype=torch.float32)#.cuda()
+                            dtype=torch.float32)
         ddinput_data,(he,ce)=self.encoder(decoding_padding,(he, ce))
         
         for s in range(max_len):        
@@ -92,34 +88,24 @@ class S2VT(nn.Module):
     def test(self,input_feature,max_len):
         sentence=[]
         """Encoding"""
-        eencoded_data,(he,ce)=nn.LSTM(input_size=input_feature.size(),
-                                hidden_size=self.encoder_hidden,
-                                num_layers=self.encoder_layers)(input_data,(self.encoder_h,self.encoder_c))
+        eencoded_data,(he,ce)=self.encoder(input_feature,(self.encoder_h,self.encoder_c))
         eeinput_data=self.add_pad(input_feature,1)
-        decoded_data,(hd,cd)=nn.LSTM(input_size=eeinput_data.size(),
-                             hidden_size=self.decoder_hidden,
-                             num__layers=self.decoder_layers)(eeinput_data,(self.decoder_h,self.decoder_c))
+        decoded_data,(hd,cd)=self.decoder(eeinput_data,(self.decoder_h,self.decoder_c))
         """Decoding""" 
         decoding_padding=torch.zeros((max_len,self.batch_size,self.decoder_hidden),
-                            dtype=torch.float32)#.cuda()
-        ddinput_data,(he,ce)=nn.LSTM(input_size=input_feature.size(),
-                                hidden_size=self.encoder_hidden,
-                                num_layers=self.encoder_layers)(decoding_padding,(he, ce))
+                            dtype=torch.float32)
+        ddinput_data,(he,ce)=self.encoder(decoding_padding,(he, ce))
         
         for s in range(max_len):        
             if s==0:
-                dencoded_data,(hd,cd)=nn.LSTM(input_size=eeinput_data.size(),
-                                   hidden_size=self.decoder_hidden,
-                                   num_layers=self.decoder_layers)(ddinput_data,(hd,cd))
+                dencoded_data,(hd,cd)=self.decoder(ddinput_data,(hd,cd))
                 input_embb=self.embedding_layer(self.add_pad(i=0),1) 
                 input_fromlstm=(ddinput_data[s]).unsqueeze(0)
             else:
                 input_embb=decoded_data
                 input_fromlstm=(ddinput_data[s]).unsqueeze(0)
             eeinput_data=torch.cat((input_embb,input_fromlstm))
-            decoded_data,(hd,cd)=nn.LSTM(input_size=eeinput_data.size(),
-                             hidden_size=self.decoder_hidden,
-                             num__layers=self.decoder_layers)(eeinput_data,(hd,cd))
+            decoded_data,(hd,cd)=self.decoder(eeinput_data,(hd,cd))
             word=self.embedding_layer(decoded_data,0).squeeze(0)
             word=torch.nn.Softmax(dim=1)(word)
             sentence.append(word)
