@@ -29,12 +29,12 @@ torch.manual_seed(1)
 
 ###HYPERPARAMETER###
 EPOCH      = 200
-BATCHSIZE  = 100
+BATCHSIZE  = 32
 ADAMPARAM  = {'lr':0.001, 'betas':(0.9, 0.999), 'eps':1e-08, 'weight_decay':1e-05}
 MODELPARAM = {'e_layers':256,'e_hidden':256,'d_layers':256,'d_hidden':256}
 
 ###DATA LOADING PARAMS###
-LOADPARAM  = {'directory': '../../../hw2-1/MLDS_hw2_1_data', 'min_count':3, 'random_seed':None, 'batch_size':100}
+LOADPARAM  = {'directory': '../../../hw2-1/MLDS_hw2_1_data', 'min_count':3, 'random_seed':None, 'batch_size':32}
        
 def main(args):
     
@@ -47,7 +47,7 @@ def main(args):
             batch_size = BATCHSIZE,
             **MODELPARAM,
             one_hot_length=one_hot_len
-            ).to(device)
+            ).cuda()
     
     ###OPTIMIZER###
     optimizer = torch.optim.Adam(train_model.parameters(), **ADAMPARAM)
@@ -62,8 +62,8 @@ def main(args):
         epoch_loss = 0
         
         for b_num, (b_x, b_y) in enumerate(tqdm(train_dataloader)):
-            b_x = b_x.to(device)
-            b_y = b_y.to(device)
+            b_x = b_x.cuda()
+            b_y = b_y.cuda()
             optimizer.zero_grad()
             pred = train_model(b_x, max_len, b_y)
             loss = loss_func(pred, b_y)
