@@ -34,7 +34,7 @@ class S2VT(nn.Module):
         self.encoder_c=torch.zeros((e_layers,batch_size,e_hidden),dtype=torch.float32)
         self.decoder_h=torch.zeros((d_layers,batch_size,d_hidden),dtype=torch.float32)
         self.decoder_c=torch.zeros((d_layers,batch_size,d_hidden),dtype=torch.float32)
-        self.encoder=nn.LSTM(input_size=80*4096,
+        self.encoder=nn.LSTM(input_size=4096,
                                 hidden_size=e_hidden,
                                 num_layers=e_layers)
         self.decoder=nn.LSTM(input_size=d_hidden+e_hidden+25,
