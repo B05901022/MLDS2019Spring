@@ -57,8 +57,9 @@ class S2VT(nn.Module):
     def forward(self,input_feature,max_len,input_fromavi):
         sentence=[]
         """Encoding"""
-        input_feature=torch.unsqueeze(input_feature,0)
-        eencoded_data,(he,ce)=self.encoder(input_feature,(self.encoder_h,self.encoder_c))
+        input_feature=torch.unsqueeze(input_feature,0)                                     #shape:(1, 32, 327680)
+        eencoded_data,(he,ce)=self.encoder(input_feature,(self.encoder_h,self.encoder_c))  #output shape:(1, 32, 256), h,c shpae:(256, 32, 256)
+        print(eencoded_data.clone().cpu().detach().numpy()[0,0,0])
         eeinput_data=self.add_pad(input_feature,1)
         decoded_data,(hd,cd)=self.decoder(eeinput_data,(self.decoder_h,self.decoder_c))
         """Decoding""" 
