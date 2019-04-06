@@ -33,7 +33,7 @@ ADAMPARAM  = {'lr':0.001, 'betas':(0.9, 0.999), 'eps':1e-08, 'weight_decay':1e-0
 MODELPARAM = {'e_layers':512,'e_hidden':1024,'d_layers':512,'d_hidden':1024}
 
 ###DATA LOADING PARAMS###
-LOADPARAM  = {'directory': './MLDS_hw2_1_data', 'min_count':3, 'random_seed':None, 'batch_size':100}
+LOADPARAM  = {'directory': '../../../hw2-1/MLDS_hw2_1_data', 'min_count':3, 'random_seed':None, 'batch_size':100}
        
 def main(args):
     global EPOCH, BATCHSIZE, ADAMPARAM, MODELPARAM, LOADPARAM
