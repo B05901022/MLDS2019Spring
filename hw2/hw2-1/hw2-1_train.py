@@ -30,7 +30,7 @@ torch.manual_seed(1)
 EPOCH      = 200
 BATCHSIZE  = 100
 ADAMPARAM  = {'lr':0.001, 'betas':(0.9, 0.999), 'eps':1e-08, 'weight_decay':1e-05}
-MODELPARAM = {'e_layers':256,'e_hidden':128,'d_layers':256,'d_hidden':256}
+MODELPARAM = {'e_layers':256,'e_hidden':128,'d_layers':256,'d_hidden':128}
 
 ###DATA LOADING PARAMS###
 LOADPARAM  = {'directory': '../../../hw2-1/MLDS_hw2_1_data', 'min_count':3, 'random_seed':None, 'batch_size':100}
