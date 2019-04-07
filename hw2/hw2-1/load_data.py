@@ -38,7 +38,7 @@ def padding(caption_list, one_hot_len, max_len):
     padded_term = np.zeros((1, one_hot_len))
     for caption in caption_list:
         padding_len = max_len - len(caption)
-        padded_list = caption + padded_term * padding_len
+        padded_list.append(caption + [padded_term] * padding_len)
     return padded_list
 
 def load_data(directory, min_count, random_seed, batch_size):
@@ -104,7 +104,6 @@ def load_data(directory, min_count, random_seed, batch_size):
     train_y = padded_train_y
     del padded_train_y
     print("")
-    
     """
     ###DUMPING IS A RIDICULOUS IDEA###
     print('Dumping preprocessed data...')
@@ -124,7 +123,7 @@ def load_data(directory, min_count, random_seed, batch_size):
     train_y = train_y_chosen
     del train_y_chosen
     print("")
-    
+
     print("Max length : %d" % max_len)
     train_x = np.array(train_x)
     train_y = np.array(train_y)
