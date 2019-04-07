@@ -34,7 +34,7 @@ ADAMPARAM  = {'lr':0.001, 'betas':(0.9, 0.999), 'eps':1e-08, 'weight_decay':1e-0
 MODELPARAM = {'e_layers':256,'e_hidden':256,'d_layers':256,'d_hidden':256}
 
 ###DATA LOADING PARAMS###
-LOADPARAM  = {'directory': '../../../hw2-1/MLDS_hw2_1_data', 'min_count':3, 'random_seed':None, 'batch_size':4}
+LOADPARAM  = {'directory': '../../../MLDS_hw2_1_data', 'min_count':3, 'random_seed':None, 'batch_size':4}
        
 def main(args):
     
@@ -64,7 +64,8 @@ def main(args):
         for b_num, (b_x, b_y) in enumerate(tqdm(train_dataloader)):
             b_x = b_x.cuda()
             b_y = b_y.cuda()
-            b_y = torch.squeeze(b_y, 2).reshape(44*4, 2420) #(4,44,2420)
+            b_y.unsqueeze(2)
+            b_y = torch.squeeze(b_y, 2).reshape(44,4, 2420)#(4,44,2420)
 
             """
             if b_y.shape[1] != BATCHSIZE:
@@ -90,7 +91,8 @@ def main(args):
             """
             optimizer.zero_grad()
             pred = train_model(b_x, max_len, b_y) #(44,4,2420)
-            pred = torch.transpose(pred, (0, 1)).reshape(44*4, 2420)
+            print (pred.shape)
+            pred = torch.transpose(pred,0, 1).reshape(44,4, 2420)
             print("pred:", pred.shape)
             print("b_y:", b_y.shape)
             loss = loss_func(pred, torch.argmax(b_y, dim=1))

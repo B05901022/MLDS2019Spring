@@ -36,7 +36,7 @@ class S2VT(nn.Module):
                                 num_layers=d_layers)
         self.embedding_layer_i=nn.Linear(self.ohl,d_hidden)
         self.embedding_layer_o=nn.Linear(d_hidden,self.ohl)
-    def add_pad(self,input_feature,i,max_len=500):
+    def add_pad(self,input_feature,i,max_len=44):
         if i==1:
             pad=torch.zeros((len(input_feature),self.batch_size,self.decoder_hidden),
                             dtype=torch.float32).cuda()       
@@ -90,7 +90,7 @@ class S2VT(nn.Module):
                 sample = torch.unsqueeze(sample, 0)#maybe not right
                 sample = torch.unsqueeze(sample, 0)#maybe not 
                 """
-                #"""
+                """
                 print("correct_answer:", end='')
                 print(correct_answer.shape)
                 print("a:", end='')
@@ -99,7 +99,7 @@ class S2VT(nn.Module):
                 print(sample.shape)
                 print("correct:", end='')
                 print(correct.shape)
-                #"""
+                """
                 #decoded_input=torch.cat((sample,correct),dim=2)
                 decoded_input=torch.cat((sample,correct),dim=2)#maybe not right
                 decoded_output,(hd,cd)=self.decoder(decoded_input,(hd,cd))
