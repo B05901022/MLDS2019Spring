@@ -86,6 +86,8 @@ class S2VT(nn.Module):
                 sample=self.embedding_layer_i(a)
                 #print("encoded_padding[s]:", encoded_padding[s].shape)
                 correct=(encoded_padding[s]).unsqueeze(0)
+                sample = torch.unsqueeze(sample, 0)#maybe not right
+                sample = torch.unsqueeze(sample, 0)#maybe not right
                 #"""
                 print("correct_answer:", end='')
                 print(correct_answer.shape)
@@ -96,8 +98,6 @@ class S2VT(nn.Module):
                 print("correct:", end='')
                 print(correct.shape)
                 #"""
-                sample = torch.unsqueeze(sample, 0)#maybe not right
-                sample = torch.unsqueeze(sample, 0)#maybe not right
                 #decoded_input=torch.cat((sample,correct),dim=2)
                 decoded_input=torch.cat((sample,correct),dim=1)#maybe not right
                 decoded_output,(hd,cd)=self.decoder(decoded_input,(hd,cd))
