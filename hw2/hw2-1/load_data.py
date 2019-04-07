@@ -51,15 +51,15 @@ def load_data(directory, min_count, random_seed, batch_size):
     print('Word count starts...')
     word_dict = dict()
     for i in range(len(train_labels)):
-        for sentence in range(len(train_labels[i])):
+        for sentence in range(len(train_labels[i]['caption'])):
             tokens = sent2words(train_labels[i]['caption'][sentence])
             for word in tokens:
                 if word not in word_dict.keys():
                     word_dict[word] = 1
                 else:
-                    word_dict[word] += 1
+                    word_dict[word] += 1    
             tokens += ['<EOS>']
-            train_labels[i][sentence] = tokens
+            train_labels[i]['caption'][sentence] = tokens
     pop_words = [i for i in word_dict.keys() if word_dict[i] <= min_count]
     for i in pop_words:
         word_dict.pop(i)
@@ -96,6 +96,7 @@ def load_data(directory, min_count, random_seed, batch_size):
     print("")
     
     #Padding
+    datasize = len(train_y)
     padded_train_y = []
     for caption_list in range(len(train_y)):
         print('Padding data %d / %d' % (caption_list+1, len(train_y)), end = '\r')
@@ -137,5 +138,5 @@ def load_data(directory, min_count, random_seed, batch_size):
     for x,y in DataLoader:
         print(x.shape)
         break
-    return DataLoader, one_hot_len, max_len, word_dict
+    return DataLoader, one_hot_len, max_len, word_dict, datasize
         

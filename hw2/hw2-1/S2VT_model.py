@@ -10,10 +10,8 @@ import torch
 import numpy as np
 import argparse
 import torchvision
-"""
-for filename in os.listdir(sys.argv[1]):
-    feature.append(np.load(sys.argv[1]+filename))
-"""
+
+
 class S2VT(nn.Module):
     def __init__(self,attention,batch_size,e_layers,e_hidden,
                  d_layers,d_hidden,one_hot_length):
@@ -58,8 +56,8 @@ class S2VT(nn.Module):
         """Encoding"""
         input_feature=torch.unsqueeze(input_feature,0)
         input_feature=input_feature.view(80,1,4096)
-        encoded_sequense,(he,ce)=self.encoder(input_feature,(self.encoder_h,self.encoder_c))
-        decoded_input=self.add_pad(encoded_sequense,1)
+        encoded_sequence,(he,ce)=self.encoder(input_feature,(self.encoder_h,self.encoder_c))
+        decoded_input=self.add_pad(encoded_sequence,1)
         decoded_output,(hd,cd)=self.decoder(decoded_input,(self.decoder_h,self.decoder_c))
         """Decoding""" 
         padding=torch.zeros((max_len,self.batch_size,4096),
@@ -84,12 +82,13 @@ class S2VT(nn.Module):
                 sentence.append(word)    
             else:
                 sample=self.embedding_layer_i(correct_answer[s].unsqueeze(0))
-                correct=(encoded_sequences[s]).unsqueeze(0)
+                correct=(encoded_sequence[s]).unsqueeze(0)
                 decoded_input=torch.cat((sample.correct),dim=2)
                 decoded_output,(hd,cd)=self.decoder(decoded_input,(hd,cd))
                 word=self.embedding_layer_o(decoded_output).squeeze(0)
                 sentence.append(word)
-        return sentence        
+        return sentence     
+    '''
     def test(self,input_feature,max_len):
         sentence=[]
         """Encoding"""
@@ -117,15 +116,4 @@ class S2VT(nn.Module):
             word=self.embedding_layer_o(decoded_data).squeeze(0)
             sentence.append(word)
         return sentence        
-"""
-def unicodeToAscii(s):
-    return ''.join(
-        c for c in unicodedata.normalize('NFD', s)
-        if unicodedata.category(c) != 'Mn'
-    )
-def normalizeString(s):
-    s = unicodeToAscii(s.lower().strip())
-    s = re.sub(r"([.!?])", r" \1", s)
-    s = re.sub(r"[^a-zA-Z.!?]+", r" ", s)
-    return s
-"""
+    '''

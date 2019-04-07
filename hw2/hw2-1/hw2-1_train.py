@@ -29,17 +29,17 @@ torch.manual_seed(1)
 
 ###HYPERPARAMETER###
 EPOCH      = 200
-BATCHSIZE  = 32
+BATCHSIZE  = 16
 ADAMPARAM  = {'lr':0.001, 'betas':(0.9, 0.999), 'eps':1e-08, 'weight_decay':1e-05}
 MODELPARAM = {'e_layers':256,'e_hidden':256,'d_layers':256,'d_hidden':256}
 
 ###DATA LOADING PARAMS###
-LOADPARAM  = {'directory': '../../../hw2-1/MLDS_hw2_1_data', 'min_count':3, 'random_seed':None, 'batch_size':32}
+LOADPARAM  = {'directory': '../../../hw2-1/MLDS_hw2_1_data', 'min_count':3, 'random_seed':None, 'batch_size':16}
        
 def main(args):
     
     ###DATALOADER###
-    train_dataloader, one_hot_len, max_len, word_dict = load_data.load_data(**LOADPARAM)
+    train_dataloader, one_hot_len, max_len, word_dict, datasize = load_data.load_data(**LOADPARAM)
     
     ###LOAD MODEL###
     train_model = S2VT_model.S2VT(
@@ -75,8 +75,8 @@ def main(args):
         torch.save(train_model, './models/'+args.model_no+'_model.pkl')
         torch.save(optimizer.state_dict(), './models/'+args.model_no+'_model.optim')
         print("")   
-        print("Epoch loss: ", epoch_loss / len(train_data))
-        loss_history.append(epoch_loss / len(train_data))
+        print("Epoch loss: ", epoch_loss / datasize)
+        #loss_history.append(epoch_loss / len(train_data))
     
     print("Training finished.")
     
