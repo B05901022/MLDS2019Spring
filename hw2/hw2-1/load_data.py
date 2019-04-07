@@ -126,7 +126,8 @@ def load_data(directory, min_count, random_seed, batch_size):
     print("")
     
     print("Max length : %d" % max_len)
-    
+    train_x = np.array(train_x)
+    train_y = np.array(train_y)
     train_x = torch.Tensor(train_x)
     train_y = torch.Tensor(train_y)
     

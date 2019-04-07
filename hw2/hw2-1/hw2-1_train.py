@@ -29,12 +29,12 @@ torch.manual_seed(1)
 
 ###HYPERPARAMETER###
 EPOCH      = 200
-BATCHSIZE  = 16
+BATCHSIZE  = 4
 ADAMPARAM  = {'lr':0.001, 'betas':(0.9, 0.999), 'eps':1e-08, 'weight_decay':1e-05}
 MODELPARAM = {'e_layers':256,'e_hidden':256,'d_layers':256,'d_hidden':256}
 
 ###DATA LOADING PARAMS###
-LOADPARAM  = {'directory': '../../../hw2-1/MLDS_hw2_1_data', 'min_count':3, 'random_seed':None, 'batch_size':16}
+LOADPARAM  = {'directory': '../../../MLDS_hw2_1_data', 'min_count':3, 'random_seed':None, 'batch_size':4}
        
 def main(args):
     
@@ -60,10 +60,32 @@ def main(args):
     for e in range(EPOCH):
         print("Epoch ", e+1)
         epoch_loss = 0
-        
+         
         for b_num, (b_x, b_y) in enumerate(tqdm(train_dataloader)):
             b_x = b_x.cuda()
             b_y = b_y.cuda()
+            """
+            if b_y.shape[1] != BATCHSIZE:
+                train_model.encoder_h = torch.zeros((MODELPARAM["e_layers"], b_y.shape[1], MODELPARAM["e_hidden"]),
+                                      dtype = torch.float32).cuda()
+                train_model.encoder_c =torch.zeros((MODELPARAM["e_layers"], b_y.shape[1], MODELPARAM["e_hidden"]),
+                                      dtype = torch.float32).cuda()
+                train_model.decoder_h = torch.zeros((MODELPARAM["d_layers"], b_y.shape[1], MODELPARAM["d_hidden"]),
+                                      dtype = torch.float32).cuda()
+                train_model.decoder_c = torch.zeros((MODELPARAM["d_layers"], b_y.shape[1], MODELPARAM["d_hidden"]),
+                                      dtype = torch.float32).cuda()
+                train_model.batch_size = b_y[1]
+            else:
+                train_model.encoder_h = torch.zeros((MODELPARAM["e_layers"], BATCHSIZE, MODELPARAM["e_hidden"]),
+                                      dtype = torch.float32).cuda()
+                train_model.encoder_c = torch.zeros((MODELPARAM["e_layers"], BATCHSIZE, MODELPARAM["e_hidden"]),
+                                              dtype = torch.float32).cuda()
+                train_model.decoder_h = torch.zeros((MODELPARAM["d_layers"], BATCHSIZE, MODELPARAM["d_hidden"]),
+                                              dtype = torch.float32).cuda()
+                train_model.decoder_c = torch.zeros((MODELPARAM["d_layers"], BATCHSIZE, MODELPARAM["d_hidden"]),
+                                              dtype = torch.float32).cuda()
+                train_model.batch_size = BATCHSIZE
+            """
             optimizer.zero_grad()
             pred = train_model(b_x, max_len, b_y)
             loss = loss_func(pred, b_y)
