@@ -53,53 +53,48 @@ class S2VT(nn.Module):
             el=nn.Linear(self.decoder_h,self.ohl)
         return el(c)
     """
-    def forward(self,input_feature,max_len,input_fromavi):
+    def forward(self,input_feature,max_len,correct_answer):
         sentence=[]
         """Encoding"""
-        input_feature=torch.unsqueeze(input_feature,0)                                     #shape:(1, 32, 327680)
-        eencoded_data,(he,ce)=self.encoder(input_feature,(self.encoder_h,self.encoder_c))  #output shape:(1, 32, 256), h,c shpae:(256, 32, 256)
-        print(eencoded_data.clone().cpu().detach().numpy()[0,0,0])
-        eeinput_data=self.add_pad(input_feature,1)
         input_feature=torch.unsqueeze(input_feature,0)
-        input_feature=input_feature.view(80,4,4096)
-        eencoded_data,(he,ce)=self.encoder(input_feature,(self.encoder_h,self.encoder_c))
-        eeinput_data=self.add_pad(eencoded_data,1)
-        decoded_data,(hd,cd)=self.decoder(eeinput_data,(self.decoder_h,self.decoder_c))
+        input_feature=input_feature.view(80,1,4096)
+        encoded_sequense,(he,ce)=self.encoder(input_feature,(self.encoder_h,self.encoder_c))
+        decoded_input=self.add_pad(encoded_sequense,1)
+        decoded_output,(hd,cd)=self.decoder(decoded_input,(self.decoder_h,self.decoder_c))
         """Decoding""" 
-        decoding_padding=torch.zeros((max_len,self.batch_size,4096),
+        padding=torch.zeros((max_len,self.batch_size,4096),
                             dtype=torch.float32).cuda()
-        ddinput_data,(he,ce)=self.encoder(decoding_padding,(he, ce))
+        encoded_padding,(he,ce)=self.encoder(padding,(he, ce))
         bos=torch.zeros((1,self.batch_size,self.ohl),
                         dtype=torch.float32).cuda()
         bos[:,:,-2]=1
-        for s in range(max_len):   
-            if s==0:
+        for s in range(max_len): 
+            correct=None
+            sample=None
+            if (s==0):
                 #dencoded_data,(hd,cd)=self.decoder(ddinput_data,(hd,cd))
-                input_temp=self.embedding_layer_i(bos) 
-                input_embb=input_temp
-                input_fromlstm=(ddinput_data[s]).unsqueeze(0)
-                eeinput_data=torch.cat((input_embb,input_fromlstm),dim=2)
-                decoded_data,(hd,cd)=self.decoder(eeinput_data,(hd,cd))
-                word=self.embedding_layer_o(decoded_data).squeeze(0)
-                sentence.append(word)
-        
+                bos_embedding=self.embedding_layer_i(bos) 
+                sample=bos_embedding
+                print(sample.shape)
+                correct=(encoded_padding[s]).unsqueeze(0)
+                print(correct.shape)
+                decoded_input=torch.cat((sample,correct),dim=2)
+                decoded_output,(hd,cd)=self.decoder(decoded_input,(hd,cd))
+                word=self.embedding_layer_o(decoded_output).squeeze(0)
+                sentence.append(word)    
             else:
-                scheduled=0.9
-                if np.random.uniform()<scheduled:
-                    input_embb=self.embedding_layer_i(input_fromavi[s])
-                else:
-                    input_embb=decoded_data
-                input_fromlstm=(ddinput_data[s]).unsqueeze(0)
-                eeinput_data=torch.cat((input_embb,input_fromlstm),dim=2)
-                decoded_data,(hd,cd)=self.decoder(eeinput_data,(hd,cd))
-                word=self.embedding_layer_o(decoded_data).squeeze(0)
+                sample=self.embedding_layer_i(correct_answer[s].unsqueeze(0))
+                correct=(encoded_sequences[s]).unsqueeze(0)
+                decoded_input=torch.cat((sample.correct),dim=2)
+                decoded_output,(hd,cd)=self.decoder(decoded_input,(hd,cd))
+                word=self.embedding_layer_o(decoded_output).squeeze(0)
                 sentence.append(word)
         return sentence        
     def test(self,input_feature,max_len):
         sentence=[]
         """Encoding"""
         input_feature=torch.unsqueeze(input_feature,0)
-        input_feature=input_feature.view(80,4,4096)
+        input_feature=input_feature.view(80,1,4096)
         eencoded_data,(he,ce)=self.encoder(input_feature,(self.encoder_h,self.encoder_c))
         print(eencoded_data.shape)
         eeinput_data=self.add_pad(eencoded_data,1)
