@@ -10,7 +10,7 @@ import torch
 import numpy as np
 import argparse
 import torchvision
-
+import sklearn.decomposition
 
 class S2VT(nn.Module):
     def __init__(self,attention,batch_size,e_layers,e_hidden,
@@ -27,7 +27,7 @@ class S2VT(nn.Module):
         self.encoder_c=torch.zeros((e_layers,batch_size,e_hidden),dtype=torch.float32).cuda()
         self.decoder_h=torch.zeros((d_layers,batch_size,d_hidden),dtype=torch.float32).cuda()
         self.decoder_c=torch.zeros((d_layers,batch_size,d_hidden),dtype=torch.float32).cuda()
-        self.encoder=nn.LSTM(input_size=4096,
+        self.encoder=nn.LSTM(input_size=256,
                                 hidden_size=e_hidden,
                                 num_layers=e_layers)
 
@@ -36,6 +36,7 @@ class S2VT(nn.Module):
                                 num_layers=d_layers)
         self.embedding_layer_i=nn.Linear(self.ohl,d_hidden)
         self.embedding_layer_o=nn.Linear(d_hidden,self.ohl)
+        self.embedding_layer_down=nn.Linear(4096,256)
             #processed=torch.cat((input_feature,bos),dim=2)
     """
     def embedding_layer(self,c,control):
@@ -48,14 +49,15 @@ class S2VT(nn.Module):
     def forward(self,input_feature,max_len,correct_answer):
         sentence=[]
         """Encoding"""
-        input_feature=input_feature.view(input_feature.shape[1],input_feature.shape[0],4096)
+        input_feature=self.embedding_layer_down(input_feature)
+        input_feature=input_feature.view(input_feature.shape[1],input_feature.shape[0],256)
         encoded_sequence,(he,ce)=self.encoder(input_feature,(self.encoder_h,self.encoder_c))
         #decoded_input=self.add_pad(encoded_sequence,1)
         pad=torch.zeros((len(encoded_sequence),self.batch_size,self.decoder_hidden),dtype=torch.float32).cuda()       
         decoded_input=torch.cat((encoded_sequence,pad),dim=2)
         decoded_output,(hd,cd)=self.decoder(decoded_input,(self.decoder_h,self.decoder_c))
         """Decoding""" 
-        padding=torch.zeros((max_len,self.batch_size,4096),
+        padding=torch.zeros((max_len,self.batch_size,256),
                             dtype=torch.float32).cuda()
         #print(padding.shape,"pad")
         encoded_padding,(he,ce)=self.encoder(padding,(he, ce))
@@ -83,8 +85,7 @@ class S2VT(nn.Module):
                 """
                 sample = torch.unsqueeze(sample, 0)#maybe not right
                 sample = torch.unsqueeze(sample, 0)#maybe not 
-                """
-                """
+            
                 print("correct_answer:", end='')
                 print(correct_answer.shape)
                 print("a:", end='')
