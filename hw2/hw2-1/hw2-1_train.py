@@ -88,8 +88,8 @@ def main(args):
             """
             optimizer.zero_grad()
             pred = train_model(b_x, max_len, b_y)
-            print(pred.shape)
-            print(b_y.shape)
+            print("pred:", pred.shape)
+            print("b_y:", b_y.shape)
             loss = loss_func(pred, b_y)
             loss.backward()
             optimizer.step()
