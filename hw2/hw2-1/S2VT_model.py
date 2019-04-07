@@ -82,6 +82,8 @@ class S2VT(nn.Module):
             else:
                 sample=self.embedding_layer_i(correct_answer[s].unsqueeze(0))
                 correct=(encoded_padding[s]).unsqueeze(0)
+                print(sample.clone().cpu().detach().numpy().shape)
+                print(correct.clone().cpu().detach().numpy().shape)
                 decoded_input=torch.cat((sample,correct),dim=2)
                 decoded_output,(hd,cd)=self.decoder(decoded_input,(hd,cd))
                 word=self.embedding_layer_o(decoded_output).squeeze(0)
