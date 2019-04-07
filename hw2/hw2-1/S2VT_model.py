@@ -23,10 +23,10 @@ class S2VT(nn.Module):
         self.decoder_layers=d_layers
         self.decoder_hidden=d_hidden
         self.ohl=one_hot_length
-        self.encoder_h=torch.zeros((e_layers,barch_size,e_hidden),dtype=torch.float32).cuda()
-        self.encoder_c=torch.zeros((e_layers,barch_size,e_hidden),dtype=torch.float32).cuda()
-        self.decoder_h=torch.zeros((d_layers,barch_size,d_hidden),dtype=torch.float32).cuda()
-        self.decoder_c=torch.zeros((d_layers,barch_size,d_hidden),dtype=torch.float32).cuda()
+        self.encoder_h=torch.zeros((e_layers,batch_size,e_hidden),dtype=torch.float32).cuda()
+        self.encoder_c=torch.zeros((e_layers,batch_size,e_hidden),dtype=torch.float32).cuda()
+        self.decoder_h=torch.zeros((d_layers,batch_size,d_hidden),dtype=torch.float32).cuda()
+        self.decoder_c=torch.zeros((d_layers,batch_size,d_hidden),dtype=torch.float32).cuda()
         self.encoder=nn.LSTM(input_size=4096,
                                 hidden_size=e_hidden,
                                 num_layers=e_layers)
@@ -81,7 +81,7 @@ class S2VT(nn.Module):
                 sentence.append(word)    
             else:
                 sample=self.embedding_layer_i(correct_answer[s].unsqueeze(0))
-                correct=(encoded_sequence[s]).unsqueeze(0)
+                correct=(encoded_padding[s]).unsqueeze(0)
                 decoded_input=torch.cat((sample,correct),dim=2)
                 decoded_output,(hd,cd)=self.decoder(decoded_input,(hd,cd))
                 word=self.embedding_layer_o(decoded_output).squeeze(0)
