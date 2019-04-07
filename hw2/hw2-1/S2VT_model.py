@@ -82,15 +82,18 @@ class S2VT(nn.Module):
                 word=self.embedding_layer_o(decoded_output).squeeze(0)
                 sentence.append(word)    
             else:
+                print("correct_answe:", end='')
+                print(correct_answer.shape)
                 correct_answer=torch.squeeze(correct_answer, 2)
                 correct_answer=correct_answer.reshape((44,4,2420))
                 correct_answer=torch.unsqueeze(correct_answer, 1)
+                print("correct_answe:", end='')
+                print(correct_answer.shape)
                 a=correct_answer[s] #.
                 sample=self.embedding_layer_i(a)
                 correct=(encoded_padding[s]).unsqueeze(0)
                 """
-                print("correct_answe:", end='')
-                print(correct_answer.shape)
+                
                 print("a:", end='')
                 print(a.shape)
                 print("sample:", end='')
