@@ -96,9 +96,10 @@ class S2VT(nn.Module):
                 print("correct:", end='')
                 print(correct.shape)
                 """
-                sample = torch.unsqueeze(sample, 0)
-                sample = torch.unsqueeze(sample, 0)
-                decoded_input=torch.cat((sample,correct),dim=2)
+                sample = torch.unsqueeze(sample, 0)#maybe not right
+                sample = torch.unsqueeze(sample, 0)#maybe not right
+                #decoded_input=torch.cat((sample,correct),dim=2)
+                decoded_input=torch.cat((sample,correct),dim=1)#maybe not right
                 decoded_output,(hd,cd)=self.decoder(decoded_input,(hd,cd))
                 word=self.embedding_layer_o(decoded_output).squeeze(0)
                 sentence.append(word)
