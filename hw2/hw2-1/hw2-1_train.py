@@ -31,7 +31,7 @@ torch.manual_seed(1)
 EPOCH      = 200
 BATCHSIZE  = 4
 ADAMPARAM  = {'lr':0.001, 'betas':(0.9, 0.999), 'eps':1e-08, 'weight_decay':1e-05}
-MODELPARAM = {'e_layers':256,'e_hidden':256,'d_layers':256,'d_hidden':256}
+MODELPARAM = {'e_layers':1,'e_hidden':256,'d_layers':1,'d_hidden':256}
 
 ###DATA LOADING PARAMS###
 LOADPARAM  = {'directory': '../../../MLDS_hw2_1_data', 'min_count':3, 'random_seed':None, 'batch_size':4}
@@ -65,9 +65,12 @@ def main(args):
             b_x = b_x.cuda()
             b_y = b_y.cuda()
             b_y.unsqueeze(2)
-            b_y = torch.squeeze(b_y, 2).reshape(44,4, 2420)#(4,44,2420)
+            b_y = torch.squeeze(b_y, 2)
+            print (b_y.shape)
+            a,b=b_y.shape[1],b_y.shape[0]
+            b_y=b_y.reshape(a,b, 2420)#(4,44,2420)
 
-            """
+            
             if b_y.shape[1] != BATCHSIZE:
                 train_model.encoder_h = torch.zeros((MODELPARAM["e_layers"], b_y.shape[1], MODELPARAM["e_hidden"]),
                                       dtype = torch.float32).cuda()
@@ -77,7 +80,7 @@ def main(args):
                                       dtype = torch.float32).cuda()
                 train_model.decoder_c = torch.zeros((MODELPARAM["d_layers"], b_y.shape[1], MODELPARAM["d_hidden"]),
                                       dtype = torch.float32).cuda()
-                train_model.batch_size = b_y[1]
+                train_model.batch_size = b_y.shape[1]
             else:
                 train_model.encoder_h = torch.zeros((MODELPARAM["e_layers"], BATCHSIZE, MODELPARAM["e_hidden"]),
                                       dtype = torch.float32).cuda()
@@ -88,19 +91,19 @@ def main(args):
                 train_model.decoder_c = torch.zeros((MODELPARAM["d_layers"], BATCHSIZE, MODELPARAM["d_hidden"]),
                                               dtype = torch.float32).cuda()
                 train_model.batch_size = BATCHSIZE
-            """
+            
             optimizer.zero_grad()
             pred = train_model(b_x, max_len, b_y) #(44,4,2420)
-            print (pred.shape)
-            pred = torch.transpose(pred,0, 1).reshape(44,4, 2420)
-            print("pred:", pred.shape)
-            print("b_y:", b_y.shape)
+            pred=torch.stack(pred)
+            #print (pred.shape)
+            pred = torch.transpose(pred,0, 1).reshape(b_y.shape[0],b_y.shape[1], 2420)
+            #print("pred:", pred.shape)
+            #print("b_y:", b_y.shape)
             loss = loss_func(pred, torch.argmax(b_y, dim=1))
             loss.backward()
             optimizer.step()
             print("Batch: ", b_num, "loss: ", loss.item(), end = '\r')
             epoch_loss += loss.item()
-            
         torch.save(train_model, './models/'+args.model_no+'_model.pkl')
         torch.save(optimizer.state_dict(), './models/'+args.model_no+'_model.optim')
         print("")   

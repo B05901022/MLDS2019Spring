@@ -36,12 +36,6 @@ class S2VT(nn.Module):
                                 num_layers=d_layers)
         self.embedding_layer_i=nn.Linear(self.ohl,d_hidden)
         self.embedding_layer_o=nn.Linear(d_hidden,self.ohl)
-    def add_pad(self,input_feature,i,max_len=44):
-        if i==1:
-            pad=torch.zeros((len(input_feature),self.batch_size,self.decoder_hidden),
-                            dtype=torch.float32).cuda()       
-            processed=torch.cat((input_feature,pad),dim=2)
-            return processed
             #processed=torch.cat((input_feature,bos),dim=2)
     """
     def embedding_layer(self,c,control):
@@ -54,18 +48,20 @@ class S2VT(nn.Module):
     def forward(self,input_feature,max_len,correct_answer):
         sentence=[]
         """Encoding"""
-        input_feature=input_feature.view(80,4,4096)
+        input_feature=input_feature.view(input_feature.shape[1],input_feature.shape[0],4096)
         encoded_sequence,(he,ce)=self.encoder(input_feature,(self.encoder_h,self.encoder_c))
-        decoded_input=self.add_pad(encoded_sequence,1)
+        #decoded_input=self.add_pad(encoded_sequence,1)
+        pad=torch.zeros((len(encoded_sequence),self.batch_size,self.decoder_hidden),dtype=torch.float32).cuda()       
+        decoded_input=torch.cat((encoded_sequence,pad),dim=2)
         decoded_output,(hd,cd)=self.decoder(decoded_input,(self.decoder_h,self.decoder_c))
         """Decoding""" 
         padding=torch.zeros((max_len,self.batch_size,4096),
                             dtype=torch.float32).cuda()
-        print(padding.shape,"pad")
+        #print(padding.shape,"pad")
         encoded_padding,(he,ce)=self.encoder(padding,(he, ce))
         bos=torch.zeros((1,self.batch_size,self.ohl),
                         dtype=torch.float32).cuda()
-        print(bos.shape,"bos")
+        #print(bos.shape,"bos")
         bos[:,:,-2]=1
         for s in range(max_len): 
             correct=None
@@ -74,9 +70,7 @@ class S2VT(nn.Module):
                 #dencoded_data,(hd,cd)=self.decoder(ddinput_data,(hd,cd))
                 bos_embedding=self.embedding_layer_i(bos) 
                 sample=bos_embedding
-                print(sample.shape)
                 correct=(encoded_padding[s]).unsqueeze(0)
-                print(correct.shape)
                 decoded_input=torch.cat((sample,correct),dim=2)
                 decoded_output,(hd,cd)=self.decoder(decoded_input,(hd,cd))
                 word=self.embedding_layer_o(decoded_output).squeeze(0)
@@ -105,8 +99,6 @@ class S2VT(nn.Module):
                 decoded_output,(hd,cd)=self.decoder(decoded_input,(hd,cd))
                 word=self.embedding_layer_o(decoded_output).squeeze(0)
                 sentence.append(word)
-        sentence=torch.stack(sentence)
-
         return sentence
 
     '''
