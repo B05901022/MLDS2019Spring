@@ -64,6 +64,8 @@ def main(args):
         for b_num, (b_x, b_y) in enumerate(tqdm(train_dataloader)):
             b_x = b_x.cuda()
             b_y = b_y.cuda()
+            b_y = torch.squeeze(b_y, 2).reshape((44,4,2420))
+
             """
             if b_y.shape[1] != BATCHSIZE:
                 train_model.encoder_h = torch.zeros((MODELPARAM["e_layers"], b_y.shape[1], MODELPARAM["e_hidden"]),
