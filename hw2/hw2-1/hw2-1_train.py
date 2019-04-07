@@ -64,7 +64,7 @@ def main(args):
         for b_num, (b_x, b_y) in enumerate(tqdm(train_dataloader)):
             b_x = b_x.cuda()
             b_y = b_y.cuda()
-            b_y = torch.squeeze(b_y, 2).reshape((44,4,2420))
+            b_y = torch.squeeze(b_y, 2).reshape(44*4, 2420) #(4,44,2420)
 
             """
             if b_y.shape[1] != BATCHSIZE:
@@ -89,10 +89,11 @@ def main(args):
                 train_model.batch_size = BATCHSIZE
             """
             optimizer.zero_grad()
-            pred = train_model(b_x, max_len, b_y)
+            pred = train_model(b_x, max_len, b_y) #(44,4,2420)
+            pred = torch.transpose(pred, (0, 1)).reshape(44*4, 2420)
             print("pred:", pred.shape)
             print("b_y:", b_y.shape)
-            loss = loss_func(pred, b_y)
+            loss = loss_func(pred, torch.argmax(b_y, dim=1))
             loss.backward()
             optimizer.step()
             print("Batch: ", b_num, "loss: ", loss.item(), end = '\r')
