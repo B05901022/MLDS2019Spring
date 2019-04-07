@@ -61,9 +61,11 @@ class S2VT(nn.Module):
         """Decoding""" 
         padding=torch.zeros((max_len,self.batch_size,4096),
                             dtype=torch.float32).cuda()
+        print(padding.shape,"pad")
         encoded_padding,(he,ce)=self.encoder(padding,(he, ce))
         bos=torch.zeros((1,self.batch_size,self.ohl),
                         dtype=torch.float32).cuda()
+        print(bos.shape,"bos")
         bos[:,:,-2]=1
         for s in range(max_len): 
             correct=None
@@ -80,15 +82,17 @@ class S2VT(nn.Module):
                 word=self.embedding_layer_o(decoded_output).squeeze(0)
                 sentence.append(word)    
             else:
-                sample=self.embedding_layer_i(correct_answer[s].unsqueeze(0))
+                a=correct_answer[s] #.
+                sample=self.embedding_layer_i(a)
                 correct=(encoded_padding[s]).unsqueeze(0)
-                print(sample.clone().cpu().detach().numpy().shape)
-                print(correct.clone().cpu().detach().numpy().shape)
                 decoded_input=torch.cat((sample,correct),dim=2)
                 decoded_output,(hd,cd)=self.decoder(decoded_input,(hd,cd))
                 word=self.embedding_layer_o(decoded_output).squeeze(0)
                 sentence.append(word)
-        return sentence     
+        sentence=torch.stack(sentence)
+
+        return sentence
+
     '''
     def test(self,input_feature,max_len):
         sentence=[]
