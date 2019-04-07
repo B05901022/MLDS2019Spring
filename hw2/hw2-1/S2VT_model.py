@@ -85,6 +85,7 @@ class S2VT(nn.Module):
                 a=correct_answer[s] #.
                 sample=self.embedding_layer_i(a)
                 correct=(encoded_padding[s]).unsqueeze(0)
+                print("correct_answe:r", end='')
                 print("a:", end='')
                 print(a.shape)
                 print("sample:", end='')
