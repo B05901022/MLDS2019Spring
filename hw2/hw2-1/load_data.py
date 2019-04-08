@@ -67,10 +67,6 @@ def load_data(directory, min_count, random_seed, batch_size):
     print('Word count finished.')
     print('Total word count : %d'%one_hot_len)
     
-    print('Dumping word dict...')
-    yaml.dump(word_dict, open('word_dict.yaml', 'w'))
-    print('Dumping finished.')
-    
     #Creating one hot vector
     for num, key in enumerate(word_dict):
         one_hot_vect = np.zeros((1, one_hot_len))
@@ -81,6 +77,10 @@ def load_data(directory, min_count, random_seed, batch_size):
         one_hot_vect = np.zeros((1, one_hot_len))
         one_hot_vect[0, -num-1] = 1
         word_dict[key] = one_hot_vect#.tolist()
+    
+    print('Dumping word dict...')
+    yaml.dump(word_dict, open('word_dict.yaml', 'w'))
+    print('Dumping finished.')
     
     #Convert to one hot vector
     max_len = 0
@@ -122,7 +122,7 @@ def load_data(directory, min_count, random_seed, batch_size):
     train_y_chosen = []
     for captions in range(len(train_y)):
         print('Randomly picking data %d / %d' % (captions+1, len(train_y)), end = '\r')
-        chosen = np.random.randint(len(train_y[captions]))
+        chosen = 0#np.random.randint(len(train_y[captions]))
         train_y_chosen.append(train_y[captions][chosen])
     train_y = train_y_chosen
     del train_y_chosen
