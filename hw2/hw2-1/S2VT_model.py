@@ -43,6 +43,7 @@ class S2VT(nn.Module):
                                                 nn.ReLU())
         self.softmax=torch.nn.Softmax(dim=1)
         self.relu=nn.ReLU()
+        self.schedule=0
             #processed=torch.cat((input_feature,bos),dim=2)
     """
     def embedding_layer(self,c,control):
@@ -52,7 +53,7 @@ class S2VT(nn.Module):
             el=nn.Linear(self.decoder_h,self.ohl)
         return el(c)
     """
-    def inverse_sigmoid(self,x,k):
+    def inverse_sigmoid(self,x,k=1):
         return k/(k+np.exp(x/k))
     def forward(self,input_feature,max_len,correct_answer):
         sentence=[]
@@ -87,16 +88,15 @@ class S2VT(nn.Module):
                 sentence.append(word)    
             else:
                 a=correct_answer[s].unsqueeze(0)
-                
-                schedule=self.inverse_sigmoid(s, k=4)#schedule=self.inverse_sigmoid((s-22)/10,1)
-                c=np.random.uniform()
-                if c<schedule:
+                if self.schedule:
+                    schedule=self.inverse_sigmoid(s,4)
+                    c=np.random.uniform()
+                    if c<schedule:
+                        sample=self.embedding_layer_i(a)
+                    else: 
+                        sample=decoded_output       
+                else:
                     sample=self.embedding_layer_i(a)
-                else: 
-                    sample=decoded_output
-                    
-                
-                #sample=self.embedding_layer_i(a)
                 #print("encoded_padding[s]:", encoded_padding[s].shape)
                 correct=(encoded_padding[s]).unsqueeze(0)
                 """
@@ -131,7 +131,7 @@ class S2VT(nn.Module):
         decoded_input=torch.cat((encoded_sequence,pad),dim=2)
         decoded_output,(hd,cd)=self.decoder(decoded_input,(self.decoder_h,self.decoder_c))
         """Decoding""" 
-        padding=torch.zeros((max_len,self.batch_size,1024),
+        padding=torch.zeros((max_len,self.batch_size,512),
                             dtype=torch.float32).cuda()
         #print(padding.shape,"pad")
         encoded_padding,(he,ce)=self.encoder(padding,(he, ce))
@@ -187,6 +187,3 @@ class S2VT(nn.Module):
                 sentence.append(word)
         return sentence
 
-    
-        #return sentence
-    
