@@ -130,13 +130,17 @@ def load_data(directory, min_count, random_seed, batch_size):
     train_x = torch.Tensor(train_x)
     train_y = torch.Tensor(train_y)
     
+    print("Generating DataLoader...")
     Dataset = Data.TensorDataset(train_x, train_y)
     DataLoader = Data.DataLoader(dataset = Dataset, batch_size=batch_size, shuffle=True, num_workers=1) 
+    print("Generating finished.")
     
     print('Loading finished.')            
     print("")
+    """
     for x,y in DataLoader:
         print(x.shape)
         break
+    """
     return DataLoader, one_hot_len, max_len, word_dict, datasize
         

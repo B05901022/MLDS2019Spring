@@ -29,12 +29,12 @@ torch.manual_seed(1)
 
 ###HYPERPARAMETER###
 EPOCH      = 200
-BATCHSIZE  = 128
+BATCHSIZE  = 4
 ADAMPARAM  = {'lr':0.1, 'betas':(0.9, 0.999), 'eps':1e-08, 'weight_decay':1e-05}
-MODELPARAM = {'e_layers':1,'e_hidden':32,'d_layers':1,'d_hidden':32}
+MODELPARAM = {'e_layers':1,'e_hidden':256,'d_layers':1,'d_hidden':256}
 
 ###DATA LOADING PARAMS###
-LOADPARAM  = {'directory': '../../../MLDS_hw2_1_data', 'min_count':3, 'random_seed':None, 'batch_size':128}
+LOADPARAM  = {'directory': '../../../hw2-1/MLDS_hw2_1_data', 'min_count':3, 'random_seed':None, 'batch_size':4}
        
 def main(args):
     
@@ -56,6 +56,9 @@ def main(args):
     loss_func = nn.CrossEntropyLoss()
     
     print("Training starts...")
+    
+    history_best_epoch_loss = 1.0
+    loss_list = []
     
     for e in range(EPOCH):
         print("Epoch ", e+1)
@@ -100,13 +103,27 @@ def main(args):
             loss = loss_func(pred,torch.argmax(b_y, dim=1))
             loss.backward()
             optimizer.step()
-            print("Batch: ", b_num, "loss: ", loss.item(),end = '\r')
+            #print("Batch: ", b_num, "loss: ", loss.item(),end = '\r')
             epoch_loss += loss.item()
-        torch.save(train_model, './models/'+args.model_no+'_model.pkl')
-        torch.save(optimizer.state_dict(), './models/'+args.model_no+'_model.optim')
-        print("")   
-        print("Epoch loss: ", epoch_loss / datasize)
+            
+            
+        #torch.save(train_model, './models/'+args.model_no+'_model.pkl')
+        #torch.save(optimizer.state_dict(), './models/'+args.model_no+'_model.optim')
+        #print("")   
+        #print("Epoch loss: ", epoch_loss / datasize)
         #loss_history.append(epoch_loss / len(train_data))
+        
+        current_epoch_loss = epoch_loss / datasize
+        loss_list.append(current_epoch_loss)
+        if current_epoch_loss < history_best_epoch_loss:
+            torch.save(train_model, './models/'+args.model_no+'_model.pkl')
+            torch.save(optimizer.state_dict(), './models/'+args.model_no+'_model.optim')
+            history_best_epoch_loss = current_epoch_loss
+        #print("")   
+        print("Epoch loss: ", current_epoch_loss)
+        #loss_history.append(epoch_loss / len(train_data))
+    
+    np.save('./loss_record/'+args.model_no+'_model_loss', np.array(loss_list))
     
     print("Training finished.")
     
