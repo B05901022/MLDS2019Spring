@@ -51,8 +51,8 @@ class S2VT(nn.Module):
             el=nn.Linear(self.decoder_h,self.ohl)
         return el(c)
     """
-    def inverse_sigmoid(self,x):
-        return 1-1/(1+np.exp(x))
+    def inverse_sigmoid(self,x,k=1):
+        return k/(k+np.exp(x/k))
     def forward(self,input_feature,max_len,correct_answer):
         sentence=[]
         """Encoding"""
