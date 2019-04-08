@@ -51,7 +51,7 @@ class S2VT(nn.Module):
         return el(c)
     """
     def inverse_sigmoid(self,x):
-        return 1/(1+np.exp(x))
+        return 1-1/(1+np.exp(x))
     def forward(self,input_feature,max_len,correct_answer):
         sentence=[]
         """Encoding"""
