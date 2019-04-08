@@ -14,7 +14,7 @@ import sklearn.decomposition
 
 class S2VT(nn.Module):
     def __init__(self,attention,batch_size,e_layers,e_hidden,
-                 d_layers,d_hidden,one_hot_length):
+                 d_layers,d_hidden,one_hot_length,minibatch):
         super(S2VT,self).__init__()
         self.attention=attention
         self.batch_size=batch_size
@@ -43,6 +43,7 @@ class S2VT(nn.Module):
                                                 nn.ReLU())
         self.softmax=torch.nn.Softmax(dim=1)
         self.relu=nn.ReLU()
+        self.minibatch=minibatch
             #processed=torch.cat((input_feature,bos),dim=2)
     """
     def embedding_layer(self,c,control):
@@ -52,7 +53,7 @@ class S2VT(nn.Module):
             el=nn.Linear(self.decoder_h,self.ohl)
         return el(c)
     """
-    def inverse_sigmoid(self,x,k=1):
+    def inverse_sigmoid(self,x,k):
         return k/(k+np.exp(x/k))
     def forward(self,input_feature,max_len,correct_answer):
         sentence=[]
@@ -88,7 +89,7 @@ class S2VT(nn.Module):
             else:
                 a=correct_answer[s].unsqueeze(0)
                 
-                schedule=self.inverse_sigmoid((s-22)/10,1)
+                schedule=self.inverse_sigmoid(self.minibatch, k=4)#schedule=self.inverse_sigmoid((s-22)/10,1)
                 c=np.random.uniform()
                 if c<schedule:
                     sample=self.embedding_layer_i(a)

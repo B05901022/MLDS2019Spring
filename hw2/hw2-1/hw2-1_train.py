@@ -65,6 +65,7 @@ def main(args):
         epoch_loss = 0
          
         for b_num, (b_x, b_y) in enumerate(tqdm(train_dataloader)):
+            train_model.minibatch=b_num
             b_x = b_x.cuda()
             b_y = b_y.cuda()
             b_y.unsqueeze(2)
@@ -124,6 +125,7 @@ def main(args):
         #loss_history.append(epoch_loss / len(train_data))
     
     np.save('./loss_record/'+args.model_no+'_model_loss', np.array(loss_list))
+    print("Best loss : %.8f" % history_best_epoch_loss)
     
     print("Training finished.")
     
