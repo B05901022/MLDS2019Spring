@@ -65,14 +65,12 @@ def main(args):
         epoch_loss = 0
          
         for b_num, (b_x, b_y) in enumerate(tqdm(train_dataloader)):
-            train_model.minibatch=b_num
             b_x = b_x.cuda()
             b_y = b_y.cuda()
             b_y.unsqueeze(2)
             b_y = torch.squeeze(b_y, 2)
-            #print (b_y.shape)
             a,b=b_y.shape[1],b_y.shape[0]
-            b_y=b_y.reshape(a,b, 2420)#(4,44,2420)
+            b_y=b_y.reshape(a,b, 2420)
 
             
             if b_y.shape[1] != BATCHSIZE:
@@ -97,22 +95,13 @@ def main(args):
                 train_model.batch_size = BATCHSIZE
             
             optimizer.zero_grad()
-            pred = train_model(b_x, max_len, b_y) #(44,4,2420)
+            pred = train_model(b_x, max_len, b_y)
             pred=torch.stack(pred)
-            #print (pred.shape)
             pred = torch.transpose(pred,0, 1).reshape(b_y.shape[0],b_y.shape[1], 2420)
             loss = loss_func(pred,torch.argmax(b_y, dim=1))
             loss.backward()
             optimizer.step()
-            #print("Batch: ", b_num, "loss: ", loss.item(),end = '\r')
             epoch_loss += loss.item()
-            
-            
-        #torch.save(train_model, './models/'+args.model_no+'_model.pkl')
-        #torch.save(optimizer.state_dict(), './models/'+args.model_no+'_model.optim')
-        #print("")   
-        #print("Epoch loss: ", epoch_loss / datasize)
-        #loss_history.append(epoch_loss / len(train_data))
         
         current_epoch_loss = epoch_loss / datasize
         loss_list.append(current_epoch_loss)

@@ -67,6 +67,10 @@ def load_data(directory, min_count, random_seed, batch_size):
     print('Word count finished.')
     print('Total word count : %d'%one_hot_len)
     
+    print('Dumping word dict...')
+    yaml.dump(word_dict, open('word_dict.yaml', 'w'))
+    print('Dumping finished.')
+    
     #Creating one hot vector
     for num, key in enumerate(word_dict):
         one_hot_vect = np.zeros((1, one_hot_len))
@@ -104,12 +108,12 @@ def load_data(directory, min_count, random_seed, batch_size):
     train_y = padded_train_y
     del padded_train_y
     print("")
+    
     """
     ###DUMPING IS A RIDICULOUS IDEA###
     print('Dumping preprocessed data...')
     np.save('proc_train_x', np.array(train_x))
     np.save('proc_train_y', np.array(train_y))
-    yaml.dump(word_dict, open('word_dict.yaml', 'w'))
     """
     
     #Random select caption
