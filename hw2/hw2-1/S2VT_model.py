@@ -42,6 +42,7 @@ class S2VT(nn.Module):
         self.embedding_layer_down=nn.Sequential(nn.Linear(4096,1024),
                                                 nn.ReLU())
         self.softmax=torch.nn.Softmax(dim=1)
+        self.relu=nn.ReLU()
             #processed=torch.cat((input_feature,bos),dim=2)
     """
     def embedding_layer(self,c,control):
@@ -87,12 +88,13 @@ class S2VT(nn.Module):
             else:
                 a=correct_answer[s].unsqueeze(0)
                 
-                schedule=self.inverse_sigmoid((s-22)/10)
+                schedule=self.inverse_sigmoid((s-22)/10,1)
                 c=np.random.uniform()
                 if c<schedule:
                     sample=self.embedding_layer_i(a)
                 else: 
                     sample=decoded_output
+                    
                 
                 #sample=self.embedding_layer_i(a)
                 #print("encoded_padding[s]:", encoded_padding[s].shape)
@@ -119,7 +121,7 @@ class S2VT(nn.Module):
 
     
     def test(self,input_feature,max_len):
-        sentence=[]
+       sentence=[]
         """Encoding"""
         input_feature=self.embedding_layer_down(input_feature)
         input_feature=input_feature.view(input_feature.shape[1],input_feature.shape[0],1024)
@@ -150,16 +152,18 @@ class S2VT(nn.Module):
                 word=self.embedding_layer_o(decoded_output).squeeze(0)
                 sentence.append(word)    
             else:
-                a=correct_answer[s].unsqueeze(0)
                 """
-                schedule=self.inverse_sigmoid((s-22)/10)
+                a=correct_answer[s].unsqueeze(0)
+                
+                schedule=self.inverse_sigmoid((s-22)/10,1)
                 c=np.random.uniform()
                 if c<schedule:
                     sample=self.embedding_layer_i(a)
                 else: 
                     sample=decoded_output
                 """
-                sample=self.embedding_layer_i(a)
+                
+                sample=decoded_output
                 #print("encoded_padding[s]:", encoded_padding[s].shape)
                 correct=(encoded_padding[s]).unsqueeze(0)
                 """
@@ -181,5 +185,8 @@ class S2VT(nn.Module):
                 word=self.embedding_layer_o(decoded_output).squeeze(0)
                 word=self.softmax(word)
                 sentence.append(word)
+        return sentence
+
+    
         return sentence
     
