@@ -29,14 +29,18 @@ class S2VT(nn.Module):
         self.decoder_c=torch.zeros((d_layers,batch_size,d_hidden),dtype=torch.float32).cuda()
         self.encoder=nn.LSTM(input_size=256,
                                 hidden_size=e_hidden,
-                                num_layers=e_layers)
+                                num_layers=e_layers,
+                                bidirectional=False
+                                )
 
         self.decoder=nn.LSTM(input_size=e_hidden+d_hidden,
                                 hidden_size=d_hidden,
-                                num_layers=d_layers)
+                                num_layers=d_layers,
+                                bidirectional=False)
         self.embedding_layer_i=nn.Linear(self.ohl,d_hidden)
         self.embedding_layer_o=nn.Linear(d_hidden,self.ohl)
         self.embedding_layer_down=nn.Linear(4096,256)
+        self.softmax=torch.nn.Softmax(dim=1)
             #processed=torch.cat((input_feature,bos),dim=2)
     """
     def embedding_layer(self,c,control):
@@ -46,6 +50,8 @@ class S2VT(nn.Module):
             el=nn.Linear(self.decoder_h,self.ohl)
         return el(c)
     """
+    def inverse_sigmoid(self,x):
+        return 1/(1+np.exp(x))
     def forward(self,input_feature,max_len,correct_answer):
         sentence=[]
         """Encoding"""
@@ -78,8 +84,16 @@ class S2VT(nn.Module):
                 word=self.embedding_layer_o(decoded_output).squeeze(0)
                 sentence.append(word)    
             else:
-                a=correct_answer[s].unsqueeze(0)#.
-                sample=self.embedding_layer_i(a)
+                a=correct_answer[s].unsqueeze(0)
+                
+                schedule=self.inverse_sigmoid((s-22)/10)
+                c=np.random.uniform()
+                if c<schedule:
+                    sample=self.embedding_layer_i(a)
+                else: 
+                    sample=decoded_output
+                
+                #sample=self.embedding_layer_i(a)
                 #print("encoded_padding[s]:", encoded_padding[s].shape)
                 correct=(encoded_padding[s]).unsqueeze(0)
                 """
@@ -102,32 +116,69 @@ class S2VT(nn.Module):
                 sentence.append(word)
         return sentence
 
-    '''
+    
     def test(self,input_feature,max_len):
         sentence=[]
         """Encoding"""
-        input_feature=torch.unsqueeze(input_feature,0)
-        input_feature=input_feature.view(80,1,4096)
-        eencoded_data,(he,ce)=self.encoder(input_feature,(self.encoder_h,self.encoder_c))
-        print(eencoded_data.shape)
-        eeinput_data=self.add_pad(eencoded_data,1)
-        decoded_data,(hd,cd)=self.decoder(eeinput_data,(self.decoder_h,self.decoder_c))
+        input_feature=self.embedding_layer_down(input_feature)
+        input_feature=input_feature.view(input_feature.shape[1],input_feature.shape[0],512)
+        encoded_sequence,(he,ce)=self.encoder(input_feature,(self.encoder_h,self.encoder_c))
+        #decoded_input=self.add_pad(encoded_sequence,1)
+        pad=torch.zeros((len(encoded_sequence),self.batch_size,self.decoder_hidden),dtype=torch.float32).cuda()       
+        decoded_input=torch.cat((encoded_sequence,pad),dim=2)
+        decoded_output,(hd,cd)=self.decoder(decoded_input,(self.decoder_h,self.decoder_c))
         """Decoding""" 
-        decoding_padding=torch.zeros((max_len,self.batch_size,4096),
+        padding=torch.zeros((max_len,self.batch_size,512),
                             dtype=torch.float32).cuda()
-        ddinput_data,(he,ce)=self.encoder(decoding_padding,(he, ce))
-        
-        for s in range(max_len):        
-            if s==0:
+        #print(padding.shape,"pad")
+        encoded_padding,(he,ce)=self.encoder(padding,(he, ce))
+        bos=torch.zeros((1,self.batch_size,self.ohl),
+                        dtype=torch.float32).cuda()
+        #print(bos.shape,"bos")
+        bos[:,:,-2]=1
+        for s in range(max_len): 
+            correct=None
+            sample=None
+            if (s==0):
                 #dencoded_data,(hd,cd)=self.decoder(ddinput_data,(hd,cd))
-                input_embb=self.embedding_layer_i(self.add_bos()) 
-                input_fromlstm=(ddinput_data[s]).unsqueeze(0)
+                bos_embedding=self.embedding_layer_i(bos) 
+                sample=bos_embedding
+                correct=(encoded_padding[s]).unsqueeze(0)
+                decoded_input=torch.cat((sample,correct),dim=2)
+                decoded_output,(hd,cd)=self.decoder(decoded_input,(hd,cd))
+                word=self.embedding_layer_o(decoded_output).squeeze(0)
+                sentence.append(word)    
             else:
-                input_embb=decoded_data
-                input_fromlstm=(ddinput_data[s]).unsqueeze(0)
-            eeinput_data=torch.cat((input_embb,input_fromlstm),dim=2)
-            decoded_data,(hd,cd)=self.decoder(eeinput_data,(hd,cd))
-            word=self.embedding_layer_o(decoded_data).squeeze(0)
-            sentence.append(word)
-        return sentence        
-    '''
+                a=correct_answer[s].unsqueeze(0)
+                """
+                schedule=self.inverse_sigmoid((s-22)/10)
+                c=np.random.uniform()
+                if c<schedule:
+                    sample=self.embedding_layer_i(a)
+                else: 
+                    sample=decoded_output
+                """
+                sample=self.embedding_layer_i(a)
+                #print("encoded_padding[s]:", encoded_padding[s].shape)
+                correct=(encoded_padding[s]).unsqueeze(0)
+                """
+                sample = torch.unsqueeze(sample, 0)#maybe not right
+                sample = torch.unsqueeze(sample, 0)#maybe not 
+            
+                print("correct_answer:", end='')
+                print(correct_answer.shape)
+                print("a:", end='')
+                print(a.shape)
+                print("sample:", end='')
+                print(sample.shape)
+                print("correct:", end='')
+                print(correct.shape)
+                """
+                #decoded_input=torch.cat((sample,correct),dim=2)
+                decoded_input=torch.cat((sample,correct),dim=2)#maybe not right
+                decoded_output,(hd,cd)=self.decoder(decoded_input,(hd,cd))
+                word=self.embedding_layer_o(decoded_output).squeeze(0)
+                word=self.softmax(word)
+                sentence.append(word)
+        return sentence
+    
