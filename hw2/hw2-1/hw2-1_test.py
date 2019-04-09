@@ -203,7 +203,7 @@ torch.manual_seed(1)
 MODELPARAM = {'e_layers':1,'e_hidden':256,'d_layers':1,'d_hidden':256}
 
 ###DATA LOADING PARAMS###
-LOADPARAM  = {'directory': '../../../hw2-1/MLDS_hw2_1_data', 'batch_size':2}#10
+LOADPARAM  = {'directory': '../../../hw2-1/MLDS_hw2_1_data', 'batch_size':10}#10
 max_len    = 44
 
 """
@@ -262,7 +262,7 @@ def main(args):
     
     for b_num, (b_x) in enumerate(tqdm(test_dataloader)):
         b_x = b_x[0].cuda()
-        print(b_x.shape)
+        #print(b_x.shape)
         pred = test_model.test(b_x, max_len)
         pred = torch.stack(pred)
         resu = pred.clone().cpu().detach().numpy()
