@@ -14,7 +14,7 @@ import sklearn.decomposition
 
 class S2VT(nn.Module):
     def __init__(self,attention,batch_size,e_layers,e_hidden,
-                 d_layers,d_hidden,one_hot_length):
+                 d_layers,d_hidden,one_hot_length,schedule,k):
         super(S2VT,self).__init__()
         self.attention=attention
         self.batch_size=batch_size
@@ -27,7 +27,7 @@ class S2VT(nn.Module):
         self.encoder_c=torch.zeros((e_layers,batch_size,e_hidden),dtype=torch.float32).cuda()
         self.decoder_h=torch.zeros((d_layers,batch_size,d_hidden),dtype=torch.float32).cuda()
         self.decoder_c=torch.zeros((d_layers,batch_size,d_hidden),dtype=torch.float32).cuda()
-        self.encoder=nn.LSTM(input_size=512,
+        self.encoder=nn.LSTM(input_size=4096,
                                 hidden_size=e_hidden,
                                 num_layers=e_layers,
                                 bidirectional=False
@@ -43,7 +43,8 @@ class S2VT(nn.Module):
                                                 nn.ReLU())
         self.softmax=torch.nn.Softmax(dim=1)
         self.relu=nn.ReLU()
-        self.schedule=0
+        self.schedule=schedule
+        self.kval=k
             #processed=torch.cat((input_feature,bos),dim=2)
     """
     def embedding_layer(self,c,control):
@@ -58,15 +59,15 @@ class S2VT(nn.Module):
     def forward(self,input_feature,max_len,correct_answer):
         sentence=[]
         """Encoding"""
-        input_feature=self.embedding_layer_down(input_feature)
-        input_feature=input_feature.view(input_feature.shape[1],input_feature.shape[0],512)
+        #input_feature=self.embedding_layer_down(input_feature)
+        input_feature=input_feature.view(input_feature.shape[1],input_feature.shape[0],4096)
         encoded_sequence,(he,ce)=self.encoder(input_feature,(self.encoder_h,self.encoder_c))
         #decoded_input=self.add_pad(encoded_sequence,1)
         pad=torch.zeros((len(encoded_sequence),self.batch_size,self.decoder_hidden),dtype=torch.float32).cuda()       
         decoded_input=torch.cat((encoded_sequence,pad),dim=2)
         decoded_output,(hd,cd)=self.decoder(decoded_input,(self.decoder_h,self.decoder_c))
         """Decoding""" 
-        padding=torch.zeros((max_len,self.batch_size,512),
+        padding=torch.zeros((max_len,self.batch_size,4096),
                             dtype=torch.float32).cuda()
         #print(padding.shape,"pad")
         encoded_padding,(he,ce)=self.encoder(padding,(he, ce))
@@ -89,7 +90,7 @@ class S2VT(nn.Module):
             else:
                 a=correct_answer[s].unsqueeze(0)
                 if self.schedule:
-                    schedule=self.inverse_sigmoid(s,4)
+                    schedule=self.inverse_sigmoid(s,self.kval)
                     c=np.random.uniform()
                     if c<schedule:
                         sample=self.embedding_layer_i(a)
@@ -123,15 +124,15 @@ class S2VT(nn.Module):
     def test(self,input_feature,max_len):
         sentence=[]
         """Encoding"""
-        input_feature=self.embedding_layer_down(input_feature)
-        input_feature=input_feature.view(input_feature.shape[1],input_feature.shape[0],1024)
+       # input_feature=self.embedding_layer_down(input_feature)
+        input_feature=input_feature.view(input_feature.shape[1],input_feature.shape[0],4096)
         encoded_sequence,(he,ce)=self.encoder(input_feature,(self.encoder_h,self.encoder_c))
         #decoded_input=self.add_pad(encoded_sequence,1)
         pad=torch.zeros((len(encoded_sequence),self.batch_size,self.decoder_hidden),dtype=torch.float32).cuda()       
         decoded_input=torch.cat((encoded_sequence,pad),dim=2)
         decoded_output,(hd,cd)=self.decoder(decoded_input,(self.decoder_h,self.decoder_c))
         """Decoding""" 
-        padding=torch.zeros((max_len,self.batch_size,512),
+        padding=torch.zeros((max_len,self.batch_size,4096),
                             dtype=torch.float32).cuda()
         #print(padding.shape,"pad")
         encoded_padding,(he,ce)=self.encoder(padding,(he, ce))

@@ -29,12 +29,12 @@ torch.manual_seed(1)
 
 ###HYPERPARAMETER###
 EPOCH      = 200
-BATCHSIZE  = 4
-ADAMPARAM  = {'lr':0.001, 'betas':(0.9, 0.999), 'eps':1e-08, 'weight_decay':1e-05}
+BATCHSIZE  = 32
+ADAMPARAM  = {'lr':0.001, 'betas':(0.9, 0.999), 'eps':1e-08}#, 'weight_decay':1e-05}
 MODELPARAM = {'e_layers':1,'e_hidden':256,'d_layers':1,'d_hidden':256}
 
 ###DATA LOADING PARAMS###
-LOADPARAM  = {'directory': '../../../hw2-1/MLDS_hw2_1_data', 'min_count':3, 'random_seed':None, 'batch_size':4}
+LOADPARAM  = {'directory': '../../../hw2-1/MLDS_hw2_1_data', 'min_count':3, 'random_seed':None, 'batch_size':32}
        
 def main(args):
     
@@ -46,7 +46,9 @@ def main(args):
             attention = 0,
             batch_size = BATCHSIZE,
             **MODELPARAM,
-            one_hot_length=one_hot_len
+            one_hot_length=one_hot_len,
+            schedule=0,
+            k=args.k
             ).cuda()
     
     ###OPTIMIZER###
@@ -105,10 +107,15 @@ def main(args):
         
         current_epoch_loss = epoch_loss / datasize
         loss_list.append(current_epoch_loss)
+        torch.save(train_model, './models/'+args.model_no+'_model.pkl')
+        torch.save(optimizer.state_dict(), './models/'+args.model_no+'_model.optim')
+        history_best_epoch_loss = min(current_epoch_loss,history_best_epoch_loss)
+        """
         if current_epoch_loss < history_best_epoch_loss:
             torch.save(train_model, './models/'+args.model_no+'_model.pkl')
             torch.save(optimizer.state_dict(), './models/'+args.model_no+'_model.optim')
             history_best_epoch_loss = current_epoch_loss
+        """
         #print("")   
         print("Epoch loss: ", current_epoch_loss)
         #loss_history.append(epoch_loss / len(train_data))
@@ -124,6 +131,7 @@ def main(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--model_no', '-m', type=str, default='0')
+    parser.add_argument('--k', '-k', type=float, default=1)
     args = parser.parse_args()
     main(args)
     
