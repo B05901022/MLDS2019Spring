@@ -203,7 +203,7 @@ torch.manual_seed(1)
 MODELPARAM = {'e_layers':1,'e_hidden':256,'d_layers':1,'d_hidden':256}
 
 ###DATA LOADING PARAMS###
-LOADPARAM  = {'directory': '../../../hw2-1/MLDS_hw2_1_data', 'batch_size':10}
+LOADPARAM  = {'directory': '../../../hw2-1/MLDS_hw2_1_data', 'batch_size':10}#10
 max_len    = 44
 
 """
@@ -221,6 +221,7 @@ max_len    = 44
 12:scheduling k=22 batch=32 dim_down False weight_decay none 
 13:scheduling k=44 batch=32 dim_down False weight_decay none
 14:scheduling no   batch=32 dim_down False weight_decay none
+15:scheduling no   batch=4  dim_down False weight_decay none
 """
  
 def load_test(directory, batch_size):
@@ -261,7 +262,7 @@ def main(args):
     
     for b_num, (b_x) in enumerate(tqdm(test_dataloader)):
         b_x = b_x[0].cuda()
-        print(b_x.shape)
+        #print(b_x.shape)
         pred = test_model.test(b_x, max_len)
         pred = torch.stack(pred)
         resu = pred.clone().cpu().detach().numpy()
@@ -275,7 +276,7 @@ def main(args):
         """
         ress = np.argmax(resu, axis=2).tolist()
         for bb in range(len(ress)):
-            pred_list.append([[video_id_list[10*b_num+bb]],ress[bb]])
+            pred_list.append([[video_id_list[LOADPARAM['batch_size']*b_num+bb]],ress[bb]])
     
     with open(os.path.join('pred_result',args.model_no+'pred_result.csv'), "w+") as f:
         print('id,value', file=f)
