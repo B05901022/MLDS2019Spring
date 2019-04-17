@@ -25,7 +25,7 @@ def word2vec_model(directory='../../../MLDS_dataset/hw2-2/clr_conversation.txt',
             sentences += sent
         
         print('Generating word2vec model')
-        word2vec_model = word2vec.Word2Vec(sentences=sentences, size=250, window=5, min_count=5, workers=4, iter=10, sg=1)
+        word2vec_model = word2vec.Word2Vec(sentences=sentences, size=250, window=5, min_count=5, workers=4, iter=100, sg=1)
         word2vec_model.save(model_name)
         print('Finished word2vec model')
     else:
@@ -96,7 +96,7 @@ def embedding_idx(corpus,
 
 def main():
     
-    dataset, w2v_model = word2vec_model(pre=True)
+    dataset, w2v_model = word2vec_model(pre=True)#pre=True
     
     ###EMBEDDING LAYER###
     embedding_matrix = np.zeros((len(w2v_model.wv.vocab.items()) + 1, w2v_model.vector_size))
