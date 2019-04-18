@@ -10,6 +10,7 @@ import tensorflow as tf
 from gensim.models import word2vec
 from tqdm import tqdm
 from tensorflow.keras.layers import Embedding
+from sklearn.preprocessing import normalize
 
 def word2vec_model(directory='../../../MLDS_dataset/hw2-2/clr_conversation.txt',
                    model_name='word2vec_only_train.model',
@@ -88,17 +89,36 @@ def embedding_idx(corpus,
         new_sent = []
         for word in sent:
             try:
-                new_sent.append(embedding_matrix[word])
+                new_sent.append(embedding_matrix[int(word)])
             except:
                 new_sent.append(np.zeros(15,))
         new_corpus.append(new_sent)
     return np.array(new_corpus)
 
+def recover(corpus,
+            embedding_matrix_normalized,
+            idx2word
+            ):
+    
+    new_corpus = []
+    for sent in corpus:
+        new_sent = []      
+        for word in sent:
+            if np.linalg.norm(word) != 0:
+                new_word = np.argmax(np.dot(embedding_matrix_normalized,
+                                            word / np.linalg.norm(word)), axis=0)
+                try:
+                    new_sent.append(idx2word[new_word])
+                except:
+                    pass
+        new_corpus.append(new_sent)      
+    return new_corpus
+
 def main():
     
     dataset, w2v_model = word2vec_model(pre=True)#pre=True
     
-    ###EMBEDDING LAYER###
+    ###EMBEDDING###
     embedding_matrix = np.zeros((len(w2v_model.wv.vocab.items()) + 1, w2v_model.vector_size))
     word2idx = {}
 
@@ -107,6 +127,9 @@ def main():
         word, vec = vocab
         embedding_matrix[i + 1] = vec
         word2idx[word] = i + 1
+        
+    idx2word = {word2idx[i]:i for i in word2idx.keys()}
+    embedding_matrix_normalized = normalize(embedding_matrix, axis=1)
     
     dataset = text_to_index(dataset, word2idx)#dataset:(available dialogue, sentences, word_index)
     
@@ -118,6 +141,6 @@ def main():
     train_y = embedding_idx(train_y, embedding_matrix=embedding_matrix)
     """
     
-    return dataset, embedding_matrix, train_x, train_y, vocab_list, word2idx
+    return dataset, embedding_matrix, embedding_matrix_normalized, train_x, train_y, vocab_list, word2idx, idx2word
 
-dtst, emb, tx, ty, vblist, w2i = main()
+#dtst, emb, emb_n, tx, ty, vblist, w2i, i2w = main()
