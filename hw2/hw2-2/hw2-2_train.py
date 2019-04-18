@@ -17,6 +17,16 @@ def word2vec_model(directory='../../../MLDS_dataset/hw2-2/clr_conversation.txt',
                    pre=False
                    ):
     
+    """
+    Parse the TRAINING data and generate an embedding relationship.
+    input: directory of dataset, 
+           model name of word to vector model,
+           prebuild model or not(False: generate a new model)
+    output: parsed dataset, word to vector model
+    
+    TODO: Make a similar function for test data parsing
+    """
+    
     dataset = open(directory, 'r', encoding='UTF-8').read().split('+++$+++')
     dataset = [[j.split(' ') for j in i.split('\n') if j != ''] for i in dataset]
     
@@ -44,6 +54,12 @@ def text_to_index(corpus,
                   pad_len=15
                   ):
     
+    """
+    Converts text to index.
+    input: parsed corpus, word to index matrix
+    output: (available_dialogue, sentences, word index)
+    """
+    
     new_corpus = []
     for doc in corpus:
         new_doc = []
@@ -68,6 +84,13 @@ def text_to_index(corpus,
 def valid_dialogue(idx_corpus,
                    pad_len=15
                    ):
+    
+    """
+    Generate valid training data.
+    input: indexed corpus
+    output: train_x, train_y
+    """
+    
     train_x = []
     train_y = []
     cut_tag = np.zeros(15,)
@@ -84,6 +107,12 @@ def embedding_idx(corpus,
                   embedding_matrix
                   ):
     
+    """
+    Converts indexes to vector of size 250 for model input.
+    input: corpus(train_x, train_y or so), embedding matrix
+    output: vectors of size 250
+    """
+    
     new_corpus = []
     for sent in corpus:
         new_sent = []
@@ -99,6 +128,12 @@ def recover(corpus,
             embedding_matrix_normalized,
             idx2word
             ):
+    
+    """
+    Recovers vectors of dim=250 to words by cosine similarity.
+    input: model output, NORMALIZED embedding matrix, index to word dictionary
+    output: sentences(list of words)
+    """
     
     new_corpus = []
     for sent in corpus:
