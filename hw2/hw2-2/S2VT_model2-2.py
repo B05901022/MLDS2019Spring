@@ -10,8 +10,13 @@ import numpy as np
 """
     S2VT model
     input:train_x,train_y (dim=250,len=15)
-    output:output_vector (dim=250,len=15)
+    need to split data beforehand
     
+"""
+"""
+class Attention(nn.Module):
+    def __init__(self):
+        super (Attention,self).__init__()
 """
 class S2VT_model(nn.Module):
     def __init__(self,encoder_hidden,decoder_hidden,batch_size,vector_dim=250):
@@ -34,14 +39,16 @@ class S2VT_model(nn.Module):
         return k/(k+np.exp(x/k))
     def forward(self,input_vector,input_label,epoch,check=0,sampling_start=200):
         sentence=[]
-        BOS=torch.zeros((len(encoded_vector),self.batchsize,self.decoder_hidden),dtype=torch.float32).cuda()
         if check==1:
             input_vector=self.input_embedding(input_vector)
         encoded_vector,(encoder_h,encoder_c)=self.encoder(input_vector,(self.initial_h,self.initial_c))
+        BOS=torch.zeros((len(encoded_vector),self.batchsize,self.decoder_hidden),dtype=torch.float32).cuda()
         if epoch==0:
             decoded_vector,(decoder_h,decoder_c)=self.decoder(BOS,(encoder_h,encoder_c))
         else:
             # Schedule Sampling 
+            if check==1:
+                input_label=self.input_embedding(input_label)
             if epoch<sampling_start: #After sampling_start epochs, Schedule sampling will work.
                 decoded_vector,(decoder_h,decoder_c)=self.decoder(input_label,(encoder_h,encoder_c))
             else:
