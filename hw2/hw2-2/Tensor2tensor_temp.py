@@ -28,9 +28,9 @@ tfe.enable_eager_execution()
 Modes = tf.estimator.ModeKeys
 
 # Setup some directories
-data_dir = os.path.expanduser("~/t2t/data")
-tmp_dir = os.path.expanduser("~/t2t/tmp")
-train_dir = os.path.expanduser("~/t2t/train")
+data_dir = os.path.expanduser("~/t2t/data")              #store pre-process
+tmp_dir = os.path.expanduser("~/t2t/tmp")                #store raw data
+train_dir = os.path.expanduser("~/t2t/train")           
 checkpoint_dir = os.path.expanduser("~/t2t/checkpoints")
 tf.gfile.MakeDirs(data_dir)
 tf.gfile.MakeDirs(tmp_dir)
