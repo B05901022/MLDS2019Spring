@@ -19,6 +19,7 @@ from tensor2tensor.utils import trainer_lib
 from tensor2tensor.utils import t2t_model
 from tensor2tensor.utils import registry
 from tensor2tensor.utils import metrics
+from Chatbotproblem import Chatbot
 
 # Enable TF Eager execution
 tfe = tf.contrib.eager
@@ -38,6 +39,9 @@ tf.gfile.MakeDirs(train_dir)
 tf.gfile.MakeDirs(checkpoint_dir)
 gs_data_dir = "gs://tensor2tensor-data"
 gs_ckpt_dir = "gs://tensor2tensor-checkpoints/"
+
+# Problem 
+chatbot_problem = Chatbot
 
 # Create hparams and the model
 model_name = "transformer"
