@@ -283,23 +283,26 @@ def trainIters(model_name, voc, train_x, train_y, encoder, decoder, encoder_opti
         
     
         # Initializations
-        print('Initializing ...')
-        for epoch in range(epochs):
-            for k in range(0,train_x.shape[0]//batch_size+1):
-                a=batch_size*k
-                b=a+batch_size
-                if b>train_x.shape[0]:
-                    b=train_x.shape[0]
-                training_batch = batch2TrainData(voc, [train_x[i] for i in range(a,b)],[train_y[i] for i in range(a,b)])
+        print('Initializing...')
+        training_batch=[]
+        for k in range(0,train_x.shape[0]//batch_size+1):
+            a=batch_size*k
+            b=a+batch_size
+            if b>train_x.shape[0]:
+                b=train_x.shape[0]
+            training_batch.append(batch2TrainData(voc, [train_x[i] for i in range(a,b)],[train_y[i] for i in range(a,b)]))
                 #print (training_batch[0].shape)
-                print_loss = 0
+        print('Training ...')
+        for epoch in range(epochs):
+            print_loss = 0
+            for l in range(0,train_x.shape[0]//batch_size+1):
                 if loadFilename:
                     epoch = checkpoint['epoch'] + 1
             
                 # Training loop
-                print("Training...")
+
                 # Extract fields from batch
-                input_variable, lengths, target_variable, mask, max_target_len = training_batch
+                input_variable, lengths, target_variable, mask, max_target_len = training_batch[l]
         
                 # Run a training iteration with batch
                 loss = train(input_variable, lengths, target_variable, mask, max_target_len, encoder,
@@ -307,13 +310,13 @@ def trainIters(model_name, voc, train_x, train_y, encoder, decoder, encoder_opti
                 print_loss += loss
         
                 # Print progress
-                if epoch % print_every == 0:
+                if (l+1) % print_every == 0:
                     print_loss_avg = print_loss / print_every
-                    print("Epoch: {};Batch: {}  Average loss: {:.4f}".format(epoch+1,k+1, print_loss_avg))
+                    print("Epoch: {};Batch: {}  Average loss: {:.4f}".format(epoch+1,l+1, print_loss_avg))
                     print_loss = 0
         
                 # Save checkpoint
-                if (epoch % save_every == 0):
+                if ((epoch+1) % save_every == 0):
                     directory = os.path.join(save_dir, model_name, corpus_name, '{}-{}_{}'.format(encoder_n_layers, decoder_n_layers, hidden_size))
                     if not os.path.exists(directory):
                         os.makedirs(directory)
@@ -339,7 +342,7 @@ batch_size = 256
 
 # Set checkpoint to load from; set to None if starting from scratch
 loadFilename = None
-checkpoint_iter = 80000
+#checkpoint_iter = 
 #loadFilename = os.path.join(save_dir, model_name, corpus_name,
 #                            '{}-{}_{}'.format(encoder_n_layers, decoder_n_layers, hidden_size),
 #                            '{}_checkpoint.tar'.format(checkpoint_iter))
@@ -378,10 +381,9 @@ print('Models built and ready to go!')
 clip = 50.0
 learning_rate = 0.0001
 decoder_learning_ratio = 5.0
-n_iteration = 4000000
 epoch=100
 print_every = 1
-save_every = 50000
+save_every = 10
 
 save_dir="./model"
 corpus_name="chat_bot"
