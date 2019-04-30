@@ -5,23 +5,86 @@ Created on Sun Apr 28 17:12:08 2019
 @author: u8815
 """
 #from chatbot tutorial on pytorch:https://pytorch.org/tutorials/beginner/chatbot_tutorial.html
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-from __future__ import unicode_literals
 
 import torch
-from torch.jit import script, trace
 import torch.nn as nn
 from torch import optim
 import torch.nn.functional as F
-import csv
 import random
 import os
 import numpy as np
-MAX_LENGTH = 15
+MAX_LENGTH = 20
 USE_CUDA = torch.cuda.is_available()
-device = torch.device("cuda" if USE_CUDA else "cpu")
+device = torch.device( "cpu")
+word2idx=np.load("word2idx.npy")
+idx2word=np.load("idx2word.npy")
+train_x=np.load("train_x.npy").astype(np.int)
+train_y=np.load("train_y.npy").astype(np.int)
+class Voc:
+    def __init__(self,name,word2index,index2word):
+        self.name = name
+        self.word2index = word2index
+        self.index2word  = index2word
+        self.num_words=71475
+voc=Voc("chatbot",word2idx,idx2word)
+def binaryMatrix(l, value=0):
+    m = []
+    for i, seq in enumerate(l):
+        m.append([])
+        for token in seq:
+            if token == 0:
+                m[i].append(0)
+            else:
+                m[i].append(1)
+    return m
+
+def inputVar(l, voc):
+    indexes_batch = [x for x in l]
+    lengths = torch.tensor([len(indexes) for indexes in indexes_batch])
+    #padList = zeroPadding(indexes_batch)
+    padVar = torch.LongTensor(indexes_batch)
+    return torch.transpose(padVar,0,1), lengths
+
+# Returns padded target sequence tensor, padding mask, and max target length
+def outputVar(l, voc):
+    indexes_batch = [s for s in l]
+    indexes_batch2=np.array(indexes_batch).T
+    max_target_len=20
+    for i in range(-1,-(len(indexes_batch2)+1),-1):
+        if np.sum(indexes_batch2[i]==0):
+            max_target_len-=1
+        else:
+            break
+    #padList = zeroPadding(indexes_batch)
+    mask = binaryMatrix(indexes_batch)
+    mask = torch.ByteTensor(mask)
+    padVar = torch.LongTensor(indexes_batch)
+    return torch.transpose(padVar,0,1), torch.transpose(mask,0,1), max_target_len
+def batch2TrainData(voc, train_x,train_y):
+    #pair_batch.sort(key=lambda x: len(x[0].split(" ")), reverse=True)
+    input_batch, output_batch = [], []
+    for i in range(len(train_x)):
+        input_batch.append(train_x[i])
+        output_batch.append(train_y[i])
+    inp, lengths = inputVar(input_batch, voc)
+    output,mask, max_target_len = outputVar(output_batch, voc)
+    return inp, lengths, output, mask, max_target_len
+
+
+# Example for validation
+small_batch_size = 5
+selected=[]
+for k in range(small_batch_size):    
+    selected.append(random.randint(0,len(train_x)-1))
+batches = batch2TrainData(voc, [train_x[c] for c in selected],[train_y[c] for c in selected])
+input_variable, lengths, target_variable, mask, max_target_len = batches
+
+print("input_variable:", input_variable)
+print("lengths:", lengths)
+print("target_variable:", target_variable)
+print("mask:", mask)
+print("max_target_len:", max_target_len)
+
 class EncoderRNN(nn.Module):
     def __init__(self, hidden_size, embedding, n_layers=1, dropout=0):
         super(EncoderRNN, self).__init__()
@@ -37,6 +100,7 @@ class EncoderRNN(nn.Module):
     def forward(self, input_seq, input_lengths, hidden=None):
         # Convert word indexes to embeddings
         embedded = self.embedding(input_seq)
+        embedded=embedded.type(torch.FloatTensor)
         # Pack padded batch of sequences for RNN module
         packed = nn.utils.rnn.pack_padded_sequence(embedded, input_lengths)
         # Forward pass through GRU
@@ -111,6 +175,7 @@ class LuongAttnDecoderRNN(nn.Module):
         # Get embedding of current input word
         embedded = self.embedding(input_step)
         embedded = self.embedding_dropout(embedded)
+        embedded=embedded.type(torch.FloatTensor)
         # Forward through unidirectional GRU
         rnn_output, hidden = self.gru(embedded, last_hidden)
         # Calculate attention weights from the current GRU output
@@ -125,6 +190,7 @@ class LuongAttnDecoderRNN(nn.Module):
         # Predict next word using Luong eq. 6
         output = self.out(concat_output)
         output = F.softmax(output, dim=1)
+        #print (output.shape)
         # Return output and final hidden state
         return output, hidden
 def maskNLLLoss(inp, target, mask):
@@ -136,7 +202,7 @@ def maskNLLLoss(inp, target, mask):
 def inverse_sigmoid(x,k=1):
     return 1-1/(1+np.exp(x/k))
 def train(input_variable, lengths, target_variable, mask, max_target_len, encoder, decoder, embedding,
-          encoder_optimizer, decoder_optimizer, batch_size, clip, max_length=MAX_LENGTH,iteration):
+          encoder_optimizer, decoder_optimizer, batch_size, clip,iteration,max_length=MAX_LENGTH):
 
     # Zero gradients
     encoder_optimizer.zero_grad()
@@ -165,8 +231,8 @@ def train(input_variable, lengths, target_variable, mask, max_target_len, encode
 
     # Determine if we are using teacher forcing this iteration
     #Schedule Sampling with inverse sigmoid
-    teacher_forcing_ratio = inverse_sigmoid((iteration-1500)/500)
-    if iteration<=1000:
+    teacher_forcing_ratio = inverse_sigmoid((iteration-150000)/50000)
+    if iteration<=100000:
         use_teacher_forcing = True
     else:
         use_teacher_forcing = True if random.random() < teacher_forcing_ratio else False
@@ -179,6 +245,7 @@ def train(input_variable, lengths, target_variable, mask, max_target_len, encode
             # Teacher forcing: next input is current target
             decoder_input = target_variable[t].view(1, -1)
             # Calculate and accumulate loss
+            #print (mask[t].shape)
             mask_loss, nTotal = maskNLLLoss(decoder_output, target_variable[t], mask[t])
             loss += mask_loss
             print_losses.append(mask_loss.item() * nTotal)
@@ -208,12 +275,12 @@ def train(input_variable, lengths, target_variable, mask, max_target_len, encode
     # Adjust model weights
     encoder_optimizer.step()
     decoder_optimizer.step()
-
+    
     return sum(print_losses) / n_totals
-def trainIters(model_name, voc, pairs, encoder, decoder, encoder_optimizer, decoder_optimizer, embedding, encoder_n_layers, decoder_n_layers, save_dir, n_iteration, batch_size, print_every, save_every, clip, corpus_name, loadFilename):
+def trainIters(model_name, voc, train_x, train_y, encoder, decoder, encoder_optimizer, decoder_optimizer, embedding, encoder_n_layers, decoder_n_layers, save_dir, n_iteration, batch_size, print_every, save_every, clip, corpus_name, loadFilename):
 
     # Load batches for each iteration
-    training_batches = [batch2TrainData(voc, [random.choice(pairs) for _ in range(batch_size)])
+    training_batches = [batch2TrainData(voc, [train_x[i] for i in range(batch_size)],[train_y[i] for i in range(batch_size)])
                       for _ in range(n_iteration)]
 
     # Initializations
@@ -261,11 +328,11 @@ model_name = 'cb_model'
 #attn_model = 'dot'
 #attn_model = 'general'
 attn_model = 'concat'
-hidden_size = 500
+hidden_size = 250
 encoder_n_layers = 2
 decoder_n_layers = 2
-dropout = 0.1
-batch_size = 64
+dropout = 0
+batch_size = 256
 
 # Set checkpoint to load from; set to None if starting from scratch
 loadFilename = None
@@ -291,8 +358,8 @@ if loadFilename:
 
 print('Building encoder and decoder ...')
 # Initialize word embeddings
-temp=np.load(embedding_matrix_normalized.npy)
-embedding = nn.Embedding.from_pretrained(temp)
+temp=np.load("embedding_matrix_normalized.npy")
+embedding = nn.Embedding.from_pretrained(torch.from_numpy(temp))
 if loadFilename:
     embedding.load_state_dict(embedding_sd)
 # Initialize encoder & decoder models
@@ -310,8 +377,10 @@ learning_rate = 0.0001
 decoder_learning_ratio = 5.0
 n_iteration = 4000
 print_every = 1
-save_every = 500
+save_every = 5000
 
+save_dir="./model"
+corpus_name="chat_bot"
 # Ensure dropout layers are in train mode
 encoder.train()
 decoder.train()
@@ -326,6 +395,6 @@ if loadFilename:
 
 # Run training iterations
 print("Starting Training!")
-trainIters(model_name, voc, pairs, encoder, decoder, encoder_optimizer, decoder_optimizer,
+trainIters(model_name, voc, train_x,train_y, encoder, decoder, encoder_optimizer, decoder_optimizer,
            embedding, encoder_n_layers, decoder_n_layers, save_dir, n_iteration, batch_size,
            print_every, save_every, clip, corpus_name, loadFilename)
