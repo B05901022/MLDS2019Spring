@@ -15,7 +15,7 @@ import os
 import numpy as np
 MAX_LENGTH = 20
 USE_CUDA = torch.cuda.is_available()
-device = torch.device( "cpu")
+device = torch.device( "cuda")
 word2idx=np.load("word2idx.npy")
 idx2word=np.load("idx2word.npy")
 train_x=np.load("train_x.npy").astype(np.int)
@@ -100,7 +100,7 @@ class EncoderRNN(nn.Module):
     def forward(self, input_seq, input_lengths, hidden=None):
         # Convert word indexes to embeddings
         embedded = self.embedding(input_seq)
-        embedded=embedded.type(torch.FloatTensor)
+        embedded=embedded.type(torch.cuda.FloatTensor)
         # Pack padded batch of sequences for RNN module
         packed = nn.utils.rnn.pack_padded_sequence(embedded, input_lengths)
         # Forward pass through GRU
@@ -175,7 +175,7 @@ class LuongAttnDecoderRNN(nn.Module):
         # Get embedding of current input word
         embedded = self.embedding(input_step)
         embedded = self.embedding_dropout(embedded)
-        embedded=embedded.type(torch.FloatTensor)
+        embedded=embedded.type(torch.cuda.FloatTensor)
         # Forward through unidirectional GRU
         rnn_output, hidden = self.gru(embedded, last_hidden)
         # Calculate attention weights from the current GRU output
@@ -202,7 +202,7 @@ def maskNLLLoss(inp, target, mask):
 def inverse_sigmoid(x,k=1):
     return 1-1/(1+np.exp(x/k))
 def train(input_variable, lengths, target_variable, mask, max_target_len, encoder, decoder, embedding,
-          encoder_optimizer, decoder_optimizer, batch_size, clip,iteration,max_length=MAX_LENGTH):
+          encoder_optimizer, decoder_optimizer, batch_size, clip,epoch,max_length=MAX_LENGTH):
 
     # Zero gradients
     encoder_optimizer.zero_grad()
@@ -231,8 +231,8 @@ def train(input_variable, lengths, target_variable, mask, max_target_len, encode
 
     # Determine if we are using teacher forcing this iteration
     #Schedule Sampling with inverse sigmoid
-    teacher_forcing_ratio = inverse_sigmoid((iteration-150000)/50000)
-    if iteration<=100000:
+    teacher_forcing_ratio = inverse_sigmoid((epoch-1500)/500)
+    if epoch<=1000:
         use_teacher_forcing = True
     else:
         use_teacher_forcing = True if random.random() < teacher_forcing_ratio else False
@@ -277,53 +277,56 @@ def train(input_variable, lengths, target_variable, mask, max_target_len, encode
     decoder_optimizer.step()
     
     return sum(print_losses) / n_totals
-def trainIters(model_name, voc, train_x, train_y, encoder, decoder, encoder_optimizer, decoder_optimizer, embedding, encoder_n_layers, decoder_n_layers, save_dir, n_iteration, batch_size, print_every, save_every, clip, corpus_name, loadFilename):
+def trainIters(model_name, voc, train_x, train_y, encoder, decoder, encoder_optimizer, decoder_optimizer, embedding, encoder_n_layers, decoder_n_layers, save_dir, epochs, batch_size, print_every, save_every, clip, corpus_name, loadFilename):
 
     # Load batches for each iteration
-    training_batches = [batch2TrainData(voc, [train_x[i] for i in range(batch_size)],[train_y[i] for i in range(batch_size)])
-                      for _ in range(n_iteration)]
-
-    # Initializations
-    print('Initializing ...')
-    start_iteration = 1
-
-    print_loss = 0
-    if loadFilename:
-        start_iteration = checkpoint['iteration'] + 1
-
-    # Training loop
-    print("Training...")
-    for iteration in range(start_iteration, n_iteration + 1):
-        training_batch = training_batches[iteration - 1]
-        # Extract fields from batch
-        input_variable, lengths, target_variable, mask, max_target_len = training_batch
-
-        # Run a training iteration with batch
-        loss = train(input_variable, lengths, target_variable, mask, max_target_len, encoder,
-                     decoder, embedding, encoder_optimizer, decoder_optimizer, batch_size, clip,iteration)
-        print_loss += loss
-
-        # Print progress
-        if iteration % print_every == 0:
-            print_loss_avg = print_loss / print_every
-            print("Iteration: {}; Percent complete: {:.1f}%; Average loss: {:.4f}".format(iteration, iteration / n_iteration * 100, print_loss_avg))
-            print_loss = 0
-
-        # Save checkpoint
-        if (iteration % save_every == 0):
-            directory = os.path.join(save_dir, model_name, corpus_name, '{}-{}_{}'.format(encoder_n_layers, decoder_n_layers, hidden_size))
-            if not os.path.exists(directory):
-                os.makedirs(directory)
-            torch.save({
-                'iteration': iteration,
-                'en': encoder.state_dict(),
-                'de': decoder.state_dict(),
-                'en_opt': encoder_optimizer.state_dict(),
-                'de_opt': decoder_optimizer.state_dict(),
-                'loss': loss,
-                'voc_dict': voc.__dict__,
-                'embedding': embedding.state_dict()
-            }, os.path.join(directory, '{}_{}.tar'.format(iteration, 'checkpoint')))
+        
+    
+        # Initializations
+        print('Initializing ...')
+        for epoch in range(epochs):
+            for k in range(0,train_x.shape[0]//batch_size+1):
+                a=batch_size*k
+                b=a+batch_size
+                if b>train_x.shape[0]:
+                    b=train_x.shape[0]
+                training_batch = batch2TrainData(voc, [train_x[i] for i in range(a,b)],[train_y[i] for i in range(a,b)])
+                #print (training_batch[0].shape)
+                print_loss = 0
+                if loadFilename:
+                    epoch = checkpoint['epoch'] + 1
+            
+                # Training loop
+                print("Training...")
+                # Extract fields from batch
+                input_variable, lengths, target_variable, mask, max_target_len = training_batch
+        
+                # Run a training iteration with batch
+                loss = train(input_variable, lengths, target_variable, mask, max_target_len, encoder,
+                             decoder, embedding, encoder_optimizer, decoder_optimizer, batch_size, clip,epoch)
+                print_loss += loss
+        
+                # Print progress
+                if epoch % print_every == 0:
+                    print_loss_avg = print_loss / print_every
+                    print("Epoch: {};Batch: {}  Average loss: {:.4f}".format(epoch+1,k+1, print_loss_avg))
+                    print_loss = 0
+        
+                # Save checkpoint
+                if (epoch % save_every == 0):
+                    directory = os.path.join(save_dir, model_name, corpus_name, '{}-{}_{}'.format(encoder_n_layers, decoder_n_layers, hidden_size))
+                    if not os.path.exists(directory):
+                        os.makedirs(directory)
+                    torch.save({
+                        'epoch': epoch,
+                        'en': encoder.state_dict(),
+                        'de': decoder.state_dict(),
+                        'en_opt': encoder_optimizer.state_dict(),
+                        'de_opt': decoder_optimizer.state_dict(),
+                        'loss': loss,
+                        'voc_dict': voc.__dict__,
+                        'embedding': embedding.state_dict()
+                    }, os.path.join(directory, '{}_{}.tar'.format(epoch, 'checkpoint')))
 model_name = 'cb_model'
 #attn_model = 'dot'
 #attn_model = 'general'
@@ -336,7 +339,7 @@ batch_size = 256
 
 # Set checkpoint to load from; set to None if starting from scratch
 loadFilename = None
-checkpoint_iter = 4000
+checkpoint_iter = 80000
 #loadFilename = os.path.join(save_dir, model_name, corpus_name,
 #                            '{}-{}_{}'.format(encoder_n_layers, decoder_n_layers, hidden_size),
 #                            '{}_checkpoint.tar'.format(checkpoint_iter))
@@ -375,9 +378,10 @@ print('Models built and ready to go!')
 clip = 50.0
 learning_rate = 0.0001
 decoder_learning_ratio = 5.0
-n_iteration = 4000
+n_iteration = 4000000
+epoch=100
 print_every = 1
-save_every = 5000
+save_every = 50000
 
 save_dir="./model"
 corpus_name="chat_bot"
@@ -396,5 +400,5 @@ if loadFilename:
 # Run training iterations
 print("Starting Training!")
 trainIters(model_name, voc, train_x,train_y, encoder, decoder, encoder_optimizer, decoder_optimizer,
-           embedding, encoder_n_layers, decoder_n_layers, save_dir, n_iteration, batch_size,
+           embedding, encoder_n_layers, decoder_n_layers, save_dir, epoch, batch_size,
            print_every, save_every, clip, corpus_name, loadFilename)
