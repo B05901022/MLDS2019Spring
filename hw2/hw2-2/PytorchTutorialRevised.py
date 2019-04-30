@@ -49,10 +49,10 @@ def inputVar(l, voc):
 def outputVar(l, voc):
     indexes_batch = [s for s in l]
     indexes_batch2=np.array(indexes_batch).T
-    max_target_len=20
-    for i in range(-1,-(len(indexes_batch2)+1),-1):
-        if np.sum(indexes_batch2[i]==0):
-            max_target_len-=1
+    max_target_len=0
+    for i in range(0,len(indexes_batch2)):
+        if np.sum(indexes_batch2[i]!=0):
+            max_target_len+=1
         else:
             break
     #padList = zeroPadding(indexes_batch)
@@ -173,9 +173,12 @@ class LuongAttnDecoderRNN(nn.Module):
     def forward(self, input_step, last_hidden, encoder_outputs):
         # Note: we run this one step (word) at a time
         # Get embedding of current input word
+        #print(last_hidden.shape)
+        
         embedded = self.embedding(input_step)
         embedded = self.embedding_dropout(embedded)
         embedded=embedded.type(torch.cuda.FloatTensor)
+        #print (embedded.shape)
         # Forward through unidirectional GRU
         rnn_output, hidden = self.gru(embedded, last_hidden)
         # Calculate attention weights from the current GRU output
@@ -202,7 +205,7 @@ def maskNLLLoss(inp, target, mask):
 def inverse_sigmoid(x,k=1):
     return 1-1/(1+np.exp(x/k))
 def train(input_variable, lengths, target_variable, mask, max_target_len, encoder, decoder, embedding,
-          encoder_optimizer, decoder_optimizer, batch_size, clip,epoch,max_length=MAX_LENGTH):
+          encoder_optimizer, decoder_optimizer, batch_size, clip,epoch,check,BOS_length=0,max_length=MAX_LENGTH):
 
     # Zero gradients
     encoder_optimizer.zero_grad()
@@ -223,16 +226,20 @@ def train(input_variable, lengths, target_variable, mask, max_target_len, encode
     encoder_outputs, encoder_hidden = encoder(input_variable, lengths)
 
     # Create initial decoder input (start with SOS tokens for each sentence)
-    decoder_input = torch.LongTensor([[1 for _ in range(batch_size)]])
+    if not check:
+        decoder_input = torch.LongTensor([[1 for _ in range(batch_size)]])
+    else:
+        decoder_input = torch.LongTensor([[1 for _ in range(BOS_length)]])
     decoder_input = decoder_input.to(device)
 
     # Set initial decoder hidden state to the encoder's final hidden state
     decoder_hidden = encoder_hidden[:decoder.n_layers]
+    #print(encoder_hidden.shape)
 
     # Determine if we are using teacher forcing this iteration
     #Schedule Sampling with inverse sigmoid
-    teacher_forcing_ratio = inverse_sigmoid((epoch-1500)/500)
-    if epoch<=1000:
+    teacher_forcing_ratio = inverse_sigmoid((epoch-75)/25)
+    if epoch<=50:
         use_teacher_forcing = True
     else:
         use_teacher_forcing = True if random.random() < teacher_forcing_ratio else False
@@ -296,6 +303,7 @@ def trainIters(model_name, voc, train_x, train_y, encoder, decoder, encoder_opti
         for epoch in range(epochs):
             print_loss = 0
             for l in range(0,train_x.shape[0]//batch_size+1):
+                check=0
                 if loadFilename:
                     epoch = checkpoint['epoch'] + 1
             
@@ -303,10 +311,13 @@ def trainIters(model_name, voc, train_x, train_y, encoder, decoder, encoder_opti
 
                 # Extract fields from batch
                 input_variable, lengths, target_variable, mask, max_target_len = training_batch[l]
-        
+                BOS_length=batch_size
+                if (l==train_x.shape[0]//batch_size):
+                    check=1
+                    BOS_length= input_variable.shape[1]
                 # Run a training iteration with batch
                 loss = train(input_variable, lengths, target_variable, mask, max_target_len, encoder,
-                             decoder, embedding, encoder_optimizer, decoder_optimizer, batch_size, clip,epoch)
+                             decoder, embedding, encoder_optimizer, decoder_optimizer, batch_size, clip,epoch,check,BOS_length)
                 print_loss += loss
         
                 # Print progress
@@ -316,20 +327,20 @@ def trainIters(model_name, voc, train_x, train_y, encoder, decoder, encoder_opti
                     print_loss = 0
         
                 # Save checkpoint
-                if ((epoch+1) % save_every == 0):
-                    directory = os.path.join(save_dir, model_name, corpus_name, '{}-{}_{}'.format(encoder_n_layers, decoder_n_layers, hidden_size))
-                    if not os.path.exists(directory):
-                        os.makedirs(directory)
-                    torch.save({
-                        'epoch': epoch,
-                        'en': encoder.state_dict(),
-                        'de': decoder.state_dict(),
-                        'en_opt': encoder_optimizer.state_dict(),
-                        'de_opt': decoder_optimizer.state_dict(),
-                        'loss': loss,
-                        'voc_dict': voc.__dict__,
-                        'embedding': embedding.state_dict()
-                    }, os.path.join(directory, '{}_{}.tar'.format(epoch, 'checkpoint')))
+            if ((epoch+1) % save_every == 0 ):
+                directory = os.path.join(save_dir, model_name, corpus_name, '{}-{}_{}'.format(encoder_n_layers, decoder_n_layers, hidden_size))
+                if not os.path.exists(directory):
+                    os.makedirs(directory)
+                torch.save({
+                    'epoch': epoch,
+                    'en': encoder.state_dict(),
+                    'de': decoder.state_dict(),
+                    'en_opt': encoder_optimizer.state_dict(),
+                    'de_opt': decoder_optimizer.state_dict(),
+                    'loss': loss,
+                    'voc_dict': voc.__dict__,
+                    'embedding': embedding.state_dict()
+                }, os.path.join(directory, '{}_{}.tar'.format(epoch, 'checkpoint')))
 model_name = 'cb_model'
 #attn_model = 'dot'
 #attn_model = 'general'
@@ -338,7 +349,7 @@ hidden_size = 250
 encoder_n_layers = 2
 decoder_n_layers = 2
 dropout = 0
-batch_size = 256
+batch_size = 512
 
 # Set checkpoint to load from; set to None if starting from scratch
 loadFilename = None
@@ -382,8 +393,8 @@ clip = 50.0
 learning_rate = 0.0001
 decoder_learning_ratio = 5.0
 epoch=100
-print_every = 1
-save_every = 10
+print_every = 100
+save_every = 1
 
 save_dir="./model"
 corpus_name="chat_bot"
