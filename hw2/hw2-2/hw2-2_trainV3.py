@@ -11,7 +11,8 @@ from tqdm import tqdm
 from sklearn.preprocessing import normalize
 from transformer_tutorial import make_model
 
-def load_dataset(directory='E:/MLDS_dataset/hw2-2/clr_conversation.txt',
+def load_dataset(word2idx,
+                 directory='E:/MLDS_dataset/hw2-2/clr_conversation.txt',
                  pad_len=20,
                  min_len=2,
                  ):
@@ -27,10 +28,10 @@ def load_dataset(directory='E:/MLDS_dataset/hw2-2/clr_conversation.txt',
         for sent in valid:
             sent_len = len(sent)
             if sent_len <= (pad_len - 2) and sent_len >= min_len:
-                padded_sent = ['<BOS>']
-                padded_sent += sent
-                padded_sent += ['<EOS>']
-                padded_sent += ['<PAD>'] * (pad_len - sent_len - 2)
+                padded_sent = [1]
+                padded_sent += sent2idx(sent, word2idx)
+                padded_sent += [2]
+                padded_sent += [0] * (pad_len - sent_len - 2)
                 if register != []:
                     train_x.append(register)
                     train_y.append(padded_sent)
@@ -46,6 +47,17 @@ def load_dataset(directory='E:/MLDS_dataset/hw2-2/clr_conversation.txt',
     train_y = np.array(train_y)
     
     return train_x, train_y
+
+def sent2idx(sentence,
+             word2idx,
+             ):
+    idxsent = []
+    for word in sentence:
+        try:
+            idxsent.append(word2idx[word])
+        except:
+            idxsent.append(3)
+    return idxsent
 
 def word2vec_model(directory='E:/MLDS_dataset/hw2-2/clr_conversation.txt',
                    model_name='word2vec_only_train.model',
@@ -203,28 +215,25 @@ def main():
     word2idx['<UNK>'] = 3
     idx2word = {word2idx[i]:i for i in word2idx.keys()}
     
-    """
     embedding_matrix_normalized = normalize(embedding_matrix, axis=1)
     
+    """
     dataset = text_to_index(dataset, word2idx)#dataset:(available dialogue, sentences, word_index)
     
     train_x, train_y = valid_dialogue(dataset)
     """
-    
     """
     #will cause OOM 
     train_x = embedding_idx(train_x, embedding_matrix=embedding_matrix)
     train_y = embedding_idx(train_y, embedding_matrix=embedding_matrix)
     """
     
-    
-    Transformer_model = make_model(src_vocab = word2idx,
-                                   tgt_vocab = idx2word,
+    Transformer_model = make_model(src_vocab = 250,
+                                   tgt_vocab = 250,
                                    )
     
-    train_x, train_y = load_dataset()
+    train_x, train_y = load_dataset(word2idx=word2idx)
     
-    return #dataset, embedding_matrix, embedding_matrix_normalized, train_x, train_y, vocab_list, word2idx, idx2word
+    return embedding_matrix, embedding_matrix_normalized, train_x, train_y, word2idx, idx2word
 
-#dtst, emb, emb_n, tx, ty, vblist, w2i, i2w = main()
-#train_x, train_y = load_dataset()
+#emb, emb_n, tx, ty, w2i, i2w = main()

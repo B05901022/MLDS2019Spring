@@ -97,7 +97,7 @@ class SublayerConnection(nn.Module):
                  size,
                  dropout,
                  ):
-        super(SublayerConnection).__init__()
+        super(SublayerConnection, self).__init__()
         self.norm    = LayerNorm(size)
         self.dropout = nn.Dropout(dropout)
     def forward(self, x, sublayer):
@@ -277,7 +277,7 @@ class Embeddings(nn.Module):
                  vocab,
                  ):
         super(Embeddings, self).__init__()
-        self.lut = nn.Embeddding(vocab, d_model)
+        self.lut = nn.Embedding(vocab, d_model)
         self.d_model = d_model
     def forward(self, x):
         return self.lut(x) * math.sqrt(self.d_model)
@@ -296,8 +296,8 @@ class PositionalEncoding(nn.Module):
         self.dropout = nn.Dropout(p=dropout)
         
         pe           = torch.zeros(max_len, d_model)
-        position     = torch.arange(0, max_len).unsqueeze(1)
-        div_term     = torch.exp(torch.arange(0, d_model, 2) * -(math.log(10000.0) / d_model))
+        position     = torch.arange(0. , max_len).unsqueeze(1)
+        div_term     = torch.exp(torch.arange(0. , d_model, 2) * -(math.log(10000.0) / d_model))
         pe[:, 0::2]  = torch.sin(position * div_term)
         pe[:, 1::2]  = torch.cos(position * div_term)
         pe           = pe.unsqueeze(0)
