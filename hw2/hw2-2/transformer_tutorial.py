@@ -19,7 +19,7 @@ from torch.autograd import Variable
 import matplotlib.pyplot as plt
 import seaborn
 
-seaborn.set_context(content="talk")
+seaborn.set_context(context="talk")
 
 """
 Encoder-Decoder Structure
@@ -239,7 +239,7 @@ class MultiHeadedAttention(nn.Module):
         if mask is not None:
             mask = mask.unsqueeze(1)
         nbatches = query.size(0)
-        query, key, value = 
+        query, key, value = \
             [l(x).view(nbatches, -1, self.h, self.d_k).transpose(1, 2)
             for l, x in zip(self.linears, (query, key, value))]
         x, self.attn = attention(query, key, value, mask=mask, dropout=self.dropout)

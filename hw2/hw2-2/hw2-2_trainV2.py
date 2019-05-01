@@ -6,13 +6,24 @@ Created on Wed Apr 17 14:22:07 2019
 """
 
 import numpy as np
-#import tensorflow as tf
 from gensim.models import word2vec
 from tqdm import tqdm
-#from tensorflow.keras.layers import Embedding
 from sklearn.preprocessing import normalize
+#from transformer_tutorial import make_model
 
-def word2vec_model(directory='./mlds_hw2_2_data/clr_conversation.txt',
+def load_dataset(directory='E:/MLDS_dataset/hw2-2/clr_conversation.txt'):
+    
+    dataset = open(directory, 'r', encoding='UTF-8').read().split('+++$+++')
+    print(len(dataset))
+    dataset = [[j.split(' ') for j in i.split('\n') if j != ''] for i in dataset]
+    
+    sentences = []
+    for sent in dataset:
+        sentences += sent
+    
+    return sentences
+
+def word2vec_model(directory='E:/MLDS_dataset/hw2-2/clr_conversation.txt',
                    model_name='word2vec_only_train.model',
                    pre=False
                    ):
@@ -179,6 +190,13 @@ def main():
     train_y = embedding_idx(train_y, embedding_matrix=embedding_matrix)
     """
     
+    """
+    Transformer_model = make_model(src_vocab = word2idx,
+                                   tgt_vocab = idx2word,
+                                   )
+    """
+    
     return dataset, embedding_matrix, embedding_matrix_normalized, train_x, train_y, vocab_list, word2idx, idx2word
 
 #dtst, emb, emb_n, tx, ty, vblist, w2i, i2w = main()
+data = load_dataset()
