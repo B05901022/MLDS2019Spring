@@ -3,17 +3,22 @@
 Created on Wed Apr 17 14:22:07 2019
 @author: Austin Hsu
 """
+import os
+os.environ['CUDA_LAUNCH_BLOCKING'] = "1"
 
 import numpy as np
 from gensim.models import word2vec
 from tqdm import tqdm
 from sklearn.preprocessing import normalize
 from transformer_tutorial import make_model, subsequent_mask, Generator
+
 import torch
 import torchvision
 import torch.nn as nn
 import torch.utils.data as Data
 import torch.functional as F
+
+
 
 ###DEVICE###
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -292,14 +297,7 @@ def main():
             
             #b_xt = b_xt.cuda()
             #b_yt = b_yt.cuda()
-            '''
-            b_xt = b_xt.squeeze(0)
-            b_yt = b_yt.squeeze(0)
-            b_xt = b_xt.transpose(1,0)
-            b_yt = b_yt.transpose(1,0)
-            b_xt = b_xt.unsqueeze(0)
-            b_yt = b_yt.unsqueeze(0)
-            '''
+
             #b_xt = b_xt.view(b_xt.size(0), -1) 
             #b_yt = b_yt.view(b_yt.size(0), -1) 
             #print(b_xt.shape,',',b_yt.shape)
@@ -315,26 +313,19 @@ def main():
             #print('b_y : ', b_y.shape)
             #pred=torch.stack(pred)
             
-            b_y = embedding_idx(b_y, embedding_matrix=embedding_matrix)
-            print('b_y : ', b_y.shape)
-            b_yt = torch.from_numpy(b_y).long()
-            b_yt = b_yt.cuda()
-            print('b_yt.shape : ', b_yt.shape)
-            
             #b_y = b_y.view(b_y.size(0), -1)
             #pred = pred.view(pred.size(0), -1) 
             #loss = loss_func(pred , torch.max(b_y, 1)[1])
             pred = Transformer_model.generator(pred)
             print('_pred_ : ', pred.shape)
-            for i in range(0,19):
-                print(pred[0][i].unsqueeze(0).shape, ',', b_yt[0][i].unsqueeze(0).shape)
-                loss = loss_func(pred[0][i], b_yt)
-                #loss = loss_func(pred, b_yt)
-                #loss = loss_func(pred,b_y)
-                #loss = loss_func(pred, b_yt)
-                loss.backward(retain_graph=True)
-                optimizer.step()
-                epoch_loss += loss.item()
+            #print(pred[0][i].unsqueeze(0).shape, ',', b_yt[0][i].unsqueeze(0).shape)
+            loss = loss_func(pred.contiguous().view(-1, pred.size(-1)),  b_y.contiguous().view(-1))
+            #loss = loss_func(pred, b_yt)
+            #loss = loss_func(pred,b_y)
+            #loss = loss_func(pred, b_yt)
+            loss.backward(retain_graph=True)
+            optimizer.step()
+            epoch_loss += loss.item()
             
         current_epoch_loss = epoch_loss / datasize
         loss_list.append(current_epoch_loss)
