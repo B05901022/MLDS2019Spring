@@ -283,19 +283,12 @@ def main(args):
         epoch_loss = 0
         
         for b_num, (b_x, b_y) in enumerate(tqdm(train_dataloader)):
-            
             mask = subsequent_mask(20).cuda()
-
             b_x = b_x.cuda()
             b_y = b_y.cuda()
-<<<<<<< HEAD
-
             scheduler.zero_grad()
-=======
             optimizer.zero_grad()
->>>>>>> d75951643710df39fe78d93ca9bb74b690d0ad6d
             pred = Transformer_model(b_x, b_y, mask, mask)
-
             pred = Transformer_model.generator(pred)
             loss = loss_func(pred.contiguous().view(-1, pred.size(-1)),  b_y.contiguous().view(-1))
             loss.backward(retain_graph=True)
