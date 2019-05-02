@@ -5,7 +5,7 @@ Created on Wed Apr 17 14:22:07 2019
 """
 import os
 os.environ['CUDA_LAUNCH_BLOCKING'] = "1"
-os.environ["CUDA_VISIBLE_DEVICES"] = "3"
+os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
 import numpy as np
 from gensim.models import word2vec
@@ -29,7 +29,7 @@ torch.manual_seed(1)
 
 ###HYPERPARAMETER###
 EPOCH      = 5
-BATCHSIZE  = 128
+BATCHSIZE  = 1
 ADAMPARAM  = {'lr':0.001, 'betas':(0.9, 0.98), 'eps':1e-09}#, 'weight_decay':1e-05}
 
 def load_dataset(word2idx,
@@ -287,6 +287,7 @@ def main(args):
 
             b_x = b_x.cuda()
             b_y = b_y.cuda()
+
             scheduler.zero_grad()
             pred = Transformer_model(b_x, b_y, mask, mask)
 
