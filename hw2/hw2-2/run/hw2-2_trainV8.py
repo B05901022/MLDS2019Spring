@@ -5,7 +5,7 @@ Created on Wed Apr 17 14:22:07 2019
 """
 import os
 os.environ['CUDA_LAUNCH_BLOCKING'] = "1"
-os.environ["CUDA_VISIBLE_DEVICES"] = "3"
+os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
 import numpy as np
 from gensim.models import word2vec
@@ -19,6 +19,7 @@ import torch.nn as nn
 import torch.utils.data as Data
 import torch.functional as F
 import argparse
+import os
 
 
 ###DEVICE###
@@ -33,12 +34,12 @@ BATCHSIZE  = 128
 ADAMPARAM  = {'lr':0.001, 'betas':(0.9, 0.98), 'eps':1e-09}#, 'weight_decay':1e-05}
 
 def load_dataset(word2idx,
-                 directory='../../../../MLDS_dataset/hw2-2/clr_conversation.txt',
+                 directory='../../../../MLDS_dataset/hw2-2/',
                  pad_len=20,
                  min_len=2,
                  ):
     
-    dataset = open(directory, 'r', encoding='UTF-8').read().split('+++$+++')
+    dataset = open(os.path.join(directory,'clr_conversation.txt'), 'r', encoding='UTF-8').read().split('+++$+++')
     dataset = [[j.split(' ') for j in i.split('\n') if j != ''] for i in dataset]
     
     print("Generating dataset...")
@@ -266,7 +267,7 @@ def main(args):
     ###OPTIMIZER###
     optimizer = torch.optim.Adam(Transformer_model.parameters(), **ADAMPARAM)
     #optimizer = torch.optim.Adam(Transformer_model.parameters(), lr=0, betas=(0.9, 0.98), eps=1e-9))
-    lambda1 = lambda epoch: 512 ** (-0.5) * min(epoch ** (-0.5), epoch * 4000 ** (-1.5))
+    lambda1 = lambda epoch: 32 ** (-0.5) * min(epoch ** (-0.5), epoch * 4000 ** (-1.5)) if epoch != 0 else 0.001
     scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, lr_lambda = lambda1)
     
     ###LOSS FUNCTION###
@@ -287,24 +288,24 @@ def main(args):
 
             b_x = b_x.cuda()
             b_y = b_y.cuda()
-            scheduler.zero_grad()
+            optimizer.zero_grad()
             pred = Transformer_model(b_x, b_y, mask, mask)
 
             pred = Transformer_model.generator(pred)
             loss = loss_func(pred.contiguous().view(-1, pred.size(-1)),  b_y.contiguous().view(-1))
             loss.backward(retain_graph=True)
+            optimizer.step()
             scheduler.step()
             epoch_loss += loss.item()
             #print('Step ', b_num, ', loss :', loss.item())
             if(b_num % 100 == 99 ):
                 bn_loss = epoch_loss / 100
                 loss_list.append(bn_loss)
-                print("loss: ", bn_loss)
+                #print("loss: ", bn_loss)
                 epoch_loss = 0
-
             torch.save(Transformer_model, args.model_directory +'epoch_'+str(e)+'_' + args.model_name + '.pkl')
             torch.save(optimizer.state_dict(), args.model_directory +'epoch'+str(e)+'_model.optim')
-    
+        print(loss_list[-1])
     np.save('./loss_record/'+'model_loss', np.array(loss_list))
     print("Training finished.")
     
