@@ -18,7 +18,7 @@ import torchvision
 import torch.nn as nn
 import torch.utils.data as Data
 import torch.functional as F
-
+import argparse
 
 
 ###DEVICE###
@@ -29,11 +29,11 @@ torch.manual_seed(1)
 
 ###HYPERPARAMETER###
 EPOCH      = 1
-BATCHSIZE  = 64
+BATCHSIZE  = 128
 ADAMPARAM  = {'lr':0.001, 'betas':(0.9, 0.999), 'eps':1e-08}#, 'weight_decay':1e-05}
 
 def load_dataset(word2idx,
-                 directory='./../mlds_hw2_2_data/clr_conversation.txt',
+                 directory='../../../../MLDS_dataset/hw2-2/clr_conversation.txt',
                  pad_len=20,
                  min_len=2,
                  ):
@@ -80,7 +80,7 @@ def sent2idx(sentence,
             idxsent.append(3)
     return idxsent
 
-def word2vec_model(directory='./../mlds_hw2_2_data/clr_conversation.txt',
+def word2vec_model(directory='../../../../MLDS_dataset/hw2-2/clr_conversation.txt',
                    model_name='word2vec_only_train.model',
                    pre=False
                    ):
@@ -95,8 +95,10 @@ def word2vec_model(directory='./../mlds_hw2_2_data/clr_conversation.txt',
     TODO: Make a similar function for test data parsing
     """
     
+    """
     dataset = open(directory, 'r', encoding='UTF-8').read().split('+++$+++')
     dataset = [[j.split(' ') for j in i.split('\n') if j != ''] for i in dataset]
+    """
     
     if not pre:
         sentences = []
@@ -110,9 +112,9 @@ def word2vec_model(directory='./../mlds_hw2_2_data/clr_conversation.txt',
     else:
         word2vec_model = word2vec.Word2Vec.load(model_name)
         
-    dataset = np.array(dataset)
+    #dataset = np.array(dataset)
     
-    return dataset, word2vec_model
+    return word2vec_model #, dataset
 
 def text_to_index(corpus,
                   word2idx,
@@ -217,9 +219,9 @@ def recover(corpus,
         new_corpus.append(new_sent)      
     return new_corpus
 
-def main():
+def main(args):
     
-    _ , w2v_model = word2vec_model(pre=True)#pre=True
+    w2v_model = word2vec_model(directory=args.data_directory, pre=True)#pre=True
     
     ###EMBEDDING###
     embedding_matrix = np.zeros((len(w2v_model.wv.vocab.items()) + 4, w2v_model.vector_size))
@@ -253,14 +255,13 @@ def main():
                                    tgt_vocab = 71475,
                                    ).cuda()
     
-    train_x, train_y = load_dataset(word2idx=word2idx)
-    print(train_x.shape, ',', train_y.shape)
-    #train_x = embedding_idx(train_x, embedding_matrix=embedding_matrix)
-    #train_y = embedding_idx(train_y, embedding_matrix=embedding_matrix)
+    train_x, train_y = load_dataset(directory=args.data_directory, word2idx=word2idx)
+    #print(train_x.shape, ',', train_y.shape)
+
     tensor_x = torch.stack([torch.from_numpy(np.array(i)) for i in train_x])
     tensor_y = torch.stack([torch.from_numpy(np.array(i)) for i in train_y])
     
-    print(tensor_x.shape, ',', tensor_y.shape)
+    #print(tensor_x.shape, ',', tensor_y.shape)
     
     train_dataset = Data.TensorDataset(tensor_x,tensor_y) # create your datset
     train_dataloader = Data.DataLoader(train_dataset,batch_size=BATCHSIZE) # create your dataloader
@@ -276,7 +277,7 @@ def main():
     
     print("Training starts...")
     
-    history_best_epoch_loss = 1.0
+    history_best_epoch_loss = 1000000.0
     loss_list = []
     
     for e in range(EPOCH):
@@ -302,14 +303,10 @@ def main():
                 loss_list.append(bn_loss)
                 print("loss: ", bn_loss)
                 epoch_loss = 0
-            """    
-            if(b_num % 500000 == 49999 ):
-                torch.save(Transformer_model, './models/'+'b_'+str(b_num)+'_Transformer_model.pkl')
-                torch.save(optimizer.state_dict(), './models/'+'b_'+str(b_num)+'_model.optim')
-            """
+
         #history_best_epoch_loss = min(current_epoch_loss,history_best_epoch_loss)
-        torch.save(Transformer_model, './models/'+'epoch_'+str(e)+'_Transformer_model.pkl')
-        torch.save(optimizer.state_dict(), './models/'+'epoch'+str(e)+'_model.optim')
+        torch.save(Transformer_model, args.model_directory +'epoch_'+str(e)+'_' + args.model_name + '.pkl')
+        torch.save(optimizer.state_dict(), args.model_directory +'epoch'+str(e)+'_model.optim')
     np.save('./loss_record/'+'model_loss', np.array(loss_list))
     #print("Best loss : %.8f" % history_best_epoch_loss)
     print("Training finished.")
@@ -317,5 +314,10 @@ def main():
     
     #return embedding_matrix, embedding_matrix_normalized, train_x, train_y, word2idx, idx2word
 
-main()
-print('done main')
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--data_directory', '-dd', type=str, default='../../../../MLDS_dataset/hw2-2/')
+    parser.add_argument('--model_name', '-mn', type=str, default='Transformer')
+    parser.add_argument('--model_directory', '-md', type=str, default='../../../../MLDS_models/hw2-2/')
+    args = parser.parse_args()
+    main(args)
