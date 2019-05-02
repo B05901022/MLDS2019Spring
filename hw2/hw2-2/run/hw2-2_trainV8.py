@@ -28,9 +28,9 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 torch.manual_seed(1)
 
 ###HYPERPARAMETER###
-EPOCH      = 1
+EPOCH      = 5
 BATCHSIZE  = 128
-ADAMPARAM  = {'lr':0.001, 'betas':(0.9, 0.999), 'eps':1e-08}#, 'weight_decay':1e-05}
+ADAMPARAM  = {'lr':0.001, 'betas':(0.9, 0.98), 'eps':1e-09}#, 'weight_decay':1e-05}
 
 def load_dataset(word2idx,
                  directory='../../../../MLDS_dataset/hw2-2/clr_conversation.txt',
@@ -219,6 +219,14 @@ def recover(corpus,
         new_corpus.append(new_sent)      
     return new_corpus
 
+def lrate_refresh(lr,
+                  step_num,
+                  warmup_steps=4000,
+                  d_model=512,
+                  ):
+    
+    return d_model ** (-0.5) * min(step_num ** (-0.5), step_num * warmup_steps ** (-1.5))
+
 def main(args):
     
     w2v_model = word2vec_model(directory=args.data_directory, pre=True)#pre=True
@@ -236,32 +244,19 @@ def main(args):
     word2idx['<BOS>'] = 1
     word2idx['<EOS>'] = 2
     word2idx['<UNK>'] = 3
+    """
     idx2word = {word2idx[i]:i for i in word2idx.keys()}
     
     embedding_matrix_normalized = normalize(embedding_matrix, axis=1)
-    
     """
-    dataset = text_to_index(dataset, word2idx)#dataset:(available dialogue, sentences, word_index)
-    
-    train_x, train_y = valid_dialogue(dataset)
-    """
-    """
-    #will cause OOM 
-    train_x = embedding_idx(train_x, embedding_matrix=embedding_matrix)
-    train_y = embedding_idx(train_y, embedding_matrix=embedding_matrix)
-    """
-    
     Transformer_model = make_model(src_vocab = 71475,
                                    tgt_vocab = 71475,
                                    ).cuda()
     
     train_x, train_y = load_dataset(directory=args.data_directory, word2idx=word2idx)
-    #print(train_x.shape, ',', train_y.shape)
 
     tensor_x = torch.stack([torch.from_numpy(np.array(i)) for i in train_x])
     tensor_y = torch.stack([torch.from_numpy(np.array(i)) for i in train_y])
-    
-    #print(tensor_x.shape, ',', tensor_y.shape)
     
     train_dataset = Data.TensorDataset(tensor_x,tensor_y) # create your datset
     train_dataloader = Data.DataLoader(train_dataset,batch_size=BATCHSIZE) # create your dataloader
@@ -271,13 +266,15 @@ def main(args):
     ###OPTIMIZER###
     optimizer = torch.optim.Adam(Transformer_model.parameters(), **ADAMPARAM)
     #optimizer = torch.optim.Adam(Transformer_model.parameters(), lr=0, betas=(0.9, 0.98), eps=1e-9))
+    lambda1 = lambda epoch: 512 ** (-0.5) * min(epoch ** (-0.5), epoch * 4000 ** (-1.5))
+    scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, lr_lambda = lambda1)
     
     ###LOSS FUNCTION###
     loss_func = nn.CrossEntropyLoss()
     
     print("Training starts...")
     
-    history_best_epoch_loss = 1000000.0
+    #history_best_epoch_loss = 1000000.0
     loss_list = []
     
     for e in range(EPOCH):
@@ -285,17 +282,18 @@ def main(args):
         epoch_loss = 0
         
         for b_num, (b_x, b_y) in enumerate(tqdm(train_dataloader)):
+            
             mask = subsequent_mask(20).cuda()
 
             b_x = b_x.cuda()
             b_y = b_y.cuda()
-            optimizer.zero_grad()
+            scheduler.zero_grad()
             pred = Transformer_model(b_x, b_y, mask, mask)
 
             pred = Transformer_model.generator(pred)
             loss = loss_func(pred.contiguous().view(-1, pred.size(-1)),  b_y.contiguous().view(-1))
             loss.backward(retain_graph=True)
-            optimizer.step()
+            scheduler.step()
             epoch_loss += loss.item()
             #print('Step ', b_num, ', loss :', loss.item())
             if(b_num % 100 == 99 ):
@@ -304,11 +302,10 @@ def main(args):
                 print("loss: ", bn_loss)
                 epoch_loss = 0
 
-        #history_best_epoch_loss = min(current_epoch_loss,history_best_epoch_loss)
-        torch.save(Transformer_model, args.model_directory +'epoch_'+str(e)+'_' + args.model_name + '.pkl')
-        torch.save(optimizer.state_dict(), args.model_directory +'epoch'+str(e)+'_model.optim')
+            torch.save(Transformer_model, args.model_directory +'epoch_'+str(e)+'_' + args.model_name + '.pkl')
+            torch.save(optimizer.state_dict(), args.model_directory +'epoch'+str(e)+'_model.optim')
+    
     np.save('./loss_record/'+'model_loss', np.array(loss_list))
-    #print("Best loss : %.8f" % history_best_epoch_loss)
     print("Training finished.")
     
     
