@@ -81,7 +81,7 @@ def sent2idx(sentence,
     return idxsent
 
 def word2vec_model(directory='../../../../MLDS_dataset/hw2-2/clr_conversation.txt',
-                   model_name='./word2vec_only_train.model',
+                   model_name='../word2vec_only_train.model',
                    pre=False
                    ):
     
