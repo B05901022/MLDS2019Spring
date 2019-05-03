@@ -12,6 +12,7 @@ from gensim.models import word2vec
 from tqdm import tqdm
 from sklearn.preprocessing import normalize
 from transformer_tutorial import make_model, subsequent_mask, Generator
+from torch.autograd import Variable
 
 import torch
 import torchvision
@@ -30,7 +31,7 @@ torch.manual_seed(1)
 
 ###HYPERPARAMETER###
 EPOCH      = 5
-BATCHSIZE  = 1
+BATCHSIZE  = 64
 ADAMPARAM  = {'lr':0.001, 'betas':(0.9, 0.98), 'eps':1e-09}#, 'weight_decay':1e-05}
 
 def load_dataset(word2idx,
@@ -228,6 +229,29 @@ def lrate_refresh(lr,
     
     return d_model ** (-0.5) * min(step_num ** (-0.5), step_num * warmup_steps ** (-1.5))
 
+def criterion(pred, target, smooth=0.1, vocab=71475, pad_len=20, batch_size=64):
+    
+    smooth_target = torch.zeros((pad_len*batch_size, vocab))
+    for i, j in enumerate(target):
+        smooth_target[i, int(j)] = 1.0 - smooth
+    smooth_target += torch.ones((pad_len*batch_size, vocab)) / vocab
+    loss = nn.KLDivLoss(reduce = True, size_average=False)
+    
+    return loss(pred, smooth_target.cuda())
+
+def mask_unpred(target, ite):
+    alt_target = target.contiguous()
+    alt_target[:, ite+1:] = 0.0
+    return alt_target
+
+def mask_back(pred, ite):
+    alt_pred = pred.contiguous()
+    pad = torch.zeros((71574,))
+    pad[0] = 1
+    pad.cuda().float()
+    alt_pred[:, :, ite+1:] = pad[0]
+    return alt_pred
+
 def main(args):
     
     w2v_model = word2vec_model(directory=args.data_directory, pre=True)#pre=True
@@ -255,56 +279,63 @@ def main(args):
                                    ).cuda()
     
     train_x, train_y = load_dataset(directory=args.data_directory, word2idx=word2idx)
-
+    """
+    quicker train
+   
+    train_x, train_y = train_x[:train_x.shape[0]], train_y[:train_x.shape[0]]
+    """
     tensor_x = torch.stack([torch.from_numpy(np.array(i)) for i in train_x])
     tensor_y = torch.stack([torch.from_numpy(np.array(i)) for i in train_y])
     
     train_dataset = Data.TensorDataset(tensor_x,tensor_y) # create your datset
-    train_dataloader = Data.DataLoader(train_dataset,batch_size=BATCHSIZE) # create your dataloader
+    train_dataloader = Data.DataLoader(train_dataset,batch_size=BATCHSIZE, shuffle=True) # create your dataloader
     
     print('dataloader complete')
     
     ###OPTIMIZER###
     optimizer = torch.optim.Adam(Transformer_model.parameters(), **ADAMPARAM)
     #optimizer = torch.optim.Adam(Transformer_model.parameters(), lr=0, betas=(0.9, 0.98), eps=1e-9))
-    lambda1 = lambda epoch: 32 ** (-0.5) * min(epoch ** (-0.5), epoch * 4000 ** (-1.5)) if epoch != 0 else 0.001
+    lambda1 = lambda steps: 512 ** (-0.5) * min(steps ** (-0.5), steps * 4000 ** (-1.5)) if steps != 0 else 0.001
     scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, lr_lambda = lambda1)
     
     ###LOSS FUNCTION###
-    loss_func = nn.CrossEntropyLoss()
+    #loss_func = nn.CrossEntropyLoss()
+    loss_func = criterion
     
     print("Training starts...")
     
     #history_best_epoch_loss = 1000000.0
-    loss_list = []
+    #loss_list = []
+    steps = 0
     
     for e in range(EPOCH):
         print("Epoch ", e+1)
         epoch_loss = 0
         
         for b_num, (b_x, b_y) in enumerate(tqdm(train_dataloader)):
+            steps += 1
             mask = subsequent_mask(20).cuda()
             b_x = b_x.cuda()
             b_y = b_y.cuda()
-            scheduler.zero_grad()
-            optimizer.zero_grad()
-            pred = Transformer_model(b_x, b_y, mask, mask)
-            pred = Transformer_model.generator(pred)
-            loss = loss_func(pred.contiguous().view(-1, pred.size(-1)),  b_y.contiguous().view(-1))
-            loss.backward(retain_graph=True)
-            optimizer.step()
+            
+            for ite in range(20):
+                optimizer.zero_grad()
+                pred = Transformer_model(b_x, mask_unpred(b_y, ite), mask, mask)
+                pred = Transformer_model.generator(pred)
+                loss = loss_func(pred.contiguous().view(-1, pred.size(-1)),  b_y.contiguous().view(-1))
+                loss.backward(retain_graph=True)
+                optimizer.step()
             scheduler.step()
             epoch_loss += loss.item()
             #print('Step ', b_num, ', loss :', loss.item())
             if(b_num % 100 == 99 ):
                 bn_loss = epoch_loss / 100
-                loss_list.append(bn_loss)
-                #print("loss: ", bn_loss)
                 epoch_loss = 0
-            torch.save(Transformer_model, args.model_directory +'epoch_'+str(e)+'_' + args.model_name + '.pkl')
-            torch.save(optimizer.state_dict(), args.model_directory +'epoch'+str(e)+'_model.optim')
-        print(loss_list[-1])
-    np.save('./loss_record/'+'model_loss', np.array(loss_list))
+            if steps % 10 == 0:
+                torch.save(Transformer_model, args.model_directory+'/checkpoint/' +'epoch_'+str(e+1) + '_checkpoint_' + str(steps) + '_' + args.model_name + '.pkl')
+                torch.save(optimizer.state_dict(), args.model_directory+'/checkpoint/' +'epoch_'+str(e+1) + '_checkpoint_' + str(steps) + '_' + args.model_name +'_model.optim')
+        print(bn_loss)
+    #np.save('./loss_record/'+'model_loss', np.array(loss_list))
     print("Training finished.")
     
     

@@ -323,8 +323,8 @@ Full Model
 def make_model(src_vocab,
                tgt_vocab,
                N=6,
-               d_model=32,
-               d_ff=128,
+               d_model=512,#32,#256
+               d_ff=2048,#256,#1024
                h=8,
                dropout=0.1
                ):
