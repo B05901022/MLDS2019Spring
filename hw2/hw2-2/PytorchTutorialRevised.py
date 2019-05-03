@@ -78,13 +78,13 @@ for k in range(small_batch_size):
     selected.append(random.randint(0,len(train_x)-1))
 batches = batch2TrainData(voc, [train_x[c] for c in selected],[train_y[c] for c in selected])
 input_variable, lengths, target_variable, mask, max_target_len = batches
-
+"""
 print("input_variable:", input_variable)
 print("lengths:", lengths)
 print("target_variable:", target_variable)
 print("mask:", mask)
 print("max_target_len:", max_target_len)
-
+"""
 class EncoderRNN(nn.Module):
     def __init__(self, hidden_size, embedding, n_layers=1, dropout=0):
         super(EncoderRNN, self).__init__()
@@ -205,7 +205,7 @@ def maskNLLLoss(inp, target, mask):
 def inverse_sigmoid(x,k=1):
     return 1-1/(1+np.exp(x/k))
 def train(input_variable, lengths, target_variable, mask, max_target_len, encoder, decoder, embedding,
-          encoder_optimizer, decoder_optimizer, batch_size, clip,epoch,check,BOS_length=0,max_length=MAX_LENGTH):
+          encoder_optimizer, decoder_optimizer, batch_size, clip,epoch,check,c,batch,BOS_length=0,max_length=MAX_LENGTH):
 
     # Zero gradients
     encoder_optimizer.zero_grad()
@@ -238,14 +238,15 @@ def train(input_variable, lengths, target_variable, mask, max_target_len, encode
 
     # Determine if we are using teacher forcing this iteration
     #Schedule Sampling with inverse sigmoid
-    teacher_forcing_ratio = inverse_sigmoid((epoch-75)/25)
-    if epoch<=50:
-        use_teacher_forcing = True
-    else:
-        use_teacher_forcing = True if random.random() < teacher_forcing_ratio else False
+
     # Forward batch of sequences through decoder one time step at a time
-    if use_teacher_forcing:
-        for t in range(max_target_len):
+    threshold=1-1/(1+np.exp((epoch-90)/5))
+    for t in range(max_target_len):
+        if epoch<=79:
+            use_teacher_forcing = True
+        else:
+            use_teacher_forcing = True if np.random.rand()>threshold else False
+        if use_teacher_forcing:
             decoder_output, decoder_hidden = decoder(
                 decoder_input, decoder_hidden, encoder_outputs
             )
@@ -257,14 +258,13 @@ def train(input_variable, lengths, target_variable, mask, max_target_len, encode
             loss += mask_loss
             print_losses.append(mask_loss.item() * nTotal)
             n_totals += nTotal
-    else:
-        for t in range(max_target_len):
+        else:
             decoder_output, decoder_hidden = decoder(
                 decoder_input, decoder_hidden, encoder_outputs
             )
             # No teacher forcing: next input is decoder's own current output
             _, topi = decoder_output.topk(1)
-            decoder_input = torch.LongTensor([[topi[i][0] for i in range(batch_size)]])
+            decoder_input = torch.LongTensor([[topi[i][0] for i in range(len(topi))]])
             decoder_input = decoder_input.to(device)
             # Calculate and accumulate loss
             mask_loss, nTotal = maskNLLLoss(decoder_output, target_variable[t], mask[t])
@@ -284,7 +284,7 @@ def train(input_variable, lengths, target_variable, mask, max_target_len, encode
     decoder_optimizer.step()
     
     return sum(print_losses) / n_totals
-def trainIters(model_name, voc, train_x, train_y, encoder, decoder, encoder_optimizer, decoder_optimizer, embedding, encoder_n_layers, decoder_n_layers, save_dir, epochs, batch_size, print_every, save_every, clip, corpus_name, loadFilename):
+def trainIters(model_name, voc, train_x, train_y, encoder, decoder, encoder_optimizer, decoder_optimizer, embedding, encoder_n_layers, decoder_n_layers, save_dir, epochs, batch_size, print_every, save_every, clip, corpus_name, loadFilename,c):
 
     # Load batches for each iteration
         
@@ -300,13 +300,14 @@ def trainIters(model_name, voc, train_x, train_y, encoder, decoder, encoder_opti
             training_batch.append(batch2TrainData(voc, [train_x[i] for i in range(a,b)],[train_y[i] for i in range(a,b)]))
                 #print (training_batch[0].shape)
         print('Training ...')
-        for epoch in range(epochs):
+        if loadFilename:
+            start = checkpoint['epoch'] +1
+        for epoch in range(start,epochs):
             print_loss = 0
             for l in range(0,train_x.shape[0]//batch_size+1):
                 check=0
-                if loadFilename:
-                    epoch = checkpoint['epoch'] + 1
-            
+                
+             
                 # Training loop
 
                 # Extract fields from batch
@@ -317,7 +318,7 @@ def trainIters(model_name, voc, train_x, train_y, encoder, decoder, encoder_opti
                     BOS_length= input_variable.shape[1]
                 # Run a training iteration with batch
                 loss = train(input_variable, lengths, target_variable, mask, max_target_len, encoder,
-                             decoder, embedding, encoder_optimizer, decoder_optimizer, batch_size, clip,epoch,check,BOS_length)
+                             decoder, embedding, encoder_optimizer, decoder_optimizer, batch_size, clip,epoch,check,c,l,BOS_length)
                 print_loss += loss
         
                 # Print progress
@@ -349,10 +350,10 @@ hidden_size = 250
 encoder_n_layers = 2
 decoder_n_layers = 2
 dropout = 0
-batch_size = 512
+batch_size = 384
 
 # Set checkpoint to load from; set to None if starting from scratch
-loadFilename = None
+loadFilename = "C:\\Users\\u8815\\Desktop\\MLDS2019Spring\\hw2\\hw2-2\\model\\cb_model\\chat_bot\\2-2_250\\79_checkpoint.tar"
 #checkpoint_iter = 
 #loadFilename = os.path.join(save_dir, model_name, corpus_name,
 #                            '{}-{}_{}'.format(encoder_n_layers, decoder_n_layers, hidden_size),
@@ -390,8 +391,8 @@ encoder = encoder.to(device)
 decoder = decoder.to(device)
 print('Models built and ready to go!')
 clip = 50.0
-learning_rate = 0.0001
-decoder_learning_ratio = 5.0
+learning_rate = 0.001
+decoder_learning_ratio = 1.0
 epoch=100
 print_every = 100
 save_every = 1
@@ -412,6 +413,78 @@ if loadFilename:
 
 # Run training iterations
 print("Starting Training!")
+c=torch.zeros(50,train_x.shape[0]//batch_size+1,dtype=torch.int8).to(device)
+
+"""
+table(c,50,train_x.shape[0]//batch_size+1)
+
 trainIters(model_name, voc, train_x,train_y, encoder, decoder, encoder_optimizer, decoder_optimizer,
            embedding, encoder_n_layers, decoder_n_layers, save_dir, epoch, batch_size,
-           print_every, save_every, clip, corpus_name, loadFilename)
+           print_every, save_every, clip, corpus_name, loadFilename,c)
+"""
+class GreedySearchDecoder(nn.Module):
+    def __init__(self, encoder, decoder):
+        super(GreedySearchDecoder, self).__init__()
+        self.encoder = encoder
+        self.decoder = decoder
+
+    def forward(self, input_seq, input_length, max_length):
+        # Forward input through encoder model
+        encoder_outputs, encoder_hidden = self.encoder(input_seq, input_length)
+        # Prepare encoder's final hidden layer to be first hidden input to the decoder
+        decoder_hidden = encoder_hidden[:decoder.n_layers]
+        # Initialize decoder input with SOS_token
+        decoder_input = torch.ones(1, 1, device=device, dtype=torch.long) * 1
+        # Initialize tensors to append decoded words to
+        all_tokens = torch.zeros([0], device=device, dtype=torch.long)
+        all_scores = torch.zeros([0], device=device)
+        # Iteratively decode one word token at a time
+        for _ in range(max_length):
+            # Forward pass through decoder
+            decoder_output, decoder_hidden = self.decoder(decoder_input, decoder_hidden, encoder_outputs)
+            # Obtain most likely word token and its softmax score
+            decoder_scores, decoder_input = torch.max(decoder_output, dim=1)
+            # Record token and score
+            all_tokens = torch.cat((all_tokens, decoder_input), dim=0)
+            all_scores = torch.cat((all_scores, decoder_scores), dim=0)
+            # Prepare current token to be next decoder input (add a dimension)
+            decoder_input = torch.unsqueeze(decoder_input, 0)
+        # Return collections of word tokens and scores
+        return all_tokens, all_scores
+def evaluate(encoder, decoder, searcher, voc, sentence, max_length=MAX_LENGTH):
+    ### Format input sentence as a batch
+    # words -> indexes
+    indexes_batch = torch.unsqueeze(torch.tensor(sentence),0)
+    # Create lengths tensor
+    lengths = torch.tensor([len(indexes) for indexes in indexes_batch ])
+    #print(lengths)
+    # Transpose dimensions of batch to match models' expectations
+    input_batch = torch.LongTensor(indexes_batch).transpose(0,1)
+    # Use appropriate device
+    input_batch = input_batch.to(device)
+    lengths = lengths.to(device)
+    # Decode sentence with searcher
+    tokens, scores = searcher(input_batch, lengths, max_length)
+    # indexes -> words
+    dictionary=voc.index2word.item()
+    decoded_words = [dictionary[token.item()] for token in tokens]
+    return decoded_words
+def evaluateInput(encoder, decoder, searcher, voc,sentence):
+    output_words = evaluate(encoder, decoder, searcher, voc, sentence)
+    # Format and print response sentence
+    output_words[:] = [x for x in output_words if not (x == 'EOS' or x == 'PAD'or x == 'UNK')]
+    return output_words
+test_x=np.load("test_x.npy")
+test_x=np.ndarray.tolist(test_x)
+def test():
+    global test_x
+    encoder.eval()
+    decoder.eval()
+    searcher=GreedySearchDecoder(encoder,decoder)
+    f=open("output.txt",'w')
+    for i in range(350,360):
+        output=evaluateInput(encoder,decoder,searcher,voc, test_x[i])
+        output.append("\n")
+        print(output)
+        f.writelines(output)
+    f.close()
