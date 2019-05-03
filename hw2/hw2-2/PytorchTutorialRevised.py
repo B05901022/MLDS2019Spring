@@ -4,8 +4,9 @@ Created on Sun Apr 28 17:12:08 2019
 
 @author: u8815
 """
-#from chatbot tutorial on pytorch:https://pytorch.org/tutorials/beginner/chatbot_tutorial.html
-
+"""
+Original code is from chatbot tutorial on pytorch:https://pytorch.org/tutorials/beginner/chatbot_tutorial.html
+"""
 import torch
 import torch.nn as nn
 from torch import optim
