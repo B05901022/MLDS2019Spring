@@ -277,10 +277,15 @@ Embedding
 class Embeddings(nn.Module):
     def __init__(self,
                  d_model,
-                 vocab
+                 vocab,
+                 pretrained_weight=None,
                  ):
         super(Embeddings, self).__init__()
-        self.lut = nn.Embedding(vocab, d_model)
+        lut = nn.Embedding(vocab, d_model)
+        if pretrained_weight == None:
+            self.lut = lut
+        else:
+            self.lut = lut.weight.data.copy_(torch.from_numpy(pretrained_weight))
         self.d_model = d_model
     def forward(self, x):
         return self.lut(x) * math.sqrt(self.d_model)
@@ -323,10 +328,11 @@ Full Model
 def make_model(src_vocab,
                tgt_vocab,
                N=6,
-               d_model=512,#32,#256
-               d_ff=2048,#256,#1024
-               h=8,
-               dropout=0.1
+               d_model=250, #512,#32,#256
+               d_ff=1024, #2048,#256,#1024
+               h=5,
+               dropout=0.1,
+               pretrained_weight=None,
                ):
     c = copy.deepcopy
     attn = MultiHeadedAttention(h, d_model)
@@ -335,8 +341,8 @@ def make_model(src_vocab,
     model = EncoderDecoder(
                 Encoder(EncoderLayer(d_model, c(attn), c(ff), dropout), N),
                 Decoder(DecoderLayer(d_model, c(attn), c(attn), c(ff), dropout), N),
-                nn.Sequential(Embeddings(d_model, src_vocab), c(position)),
-                nn.Sequential(Embeddings(d_model, tgt_vocab), c(position)),
+                nn.Sequential(Embeddings(d_model, src_vocab, pretrained_weight), c(position)),
+                nn.Sequential(Embeddings(d_model, tgt_vocab, pretrained_weight), c(position)),
                 Generator(d_model, tgt_vocab)
                 )
     

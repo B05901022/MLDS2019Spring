@@ -269,13 +269,16 @@ def main(args):
     word2idx['<BOS>'] = 1
     word2idx['<EOS>'] = 2
     word2idx['<UNK>'] = 3
+    
     """
     idx2word = {word2idx[i]:i for i in word2idx.keys()}
     
     embedding_matrix_normalized = normalize(embedding_matrix, axis=1)
     """
+    
     Transformer_model = make_model(src_vocab = 71475,
                                    tgt_vocab = 71475,
+                                   pretrained_weight = embedding_matrix,
                                    ).cuda()
     
     train_x, train_y = load_dataset(directory=args.data_directory, word2idx=word2idx)
