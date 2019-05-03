@@ -282,7 +282,7 @@ class Embeddings(nn.Module):
                  ):
         super(Embeddings, self).__init__()
         lut = nn.Embedding(vocab, d_model)
-        if pretrained_weight == None:
+        if pretrained_weight is not None:
             self.lut = lut
         else:
             self.lut = lut.weight.data.copy_(torch.from_numpy(pretrained_weight))

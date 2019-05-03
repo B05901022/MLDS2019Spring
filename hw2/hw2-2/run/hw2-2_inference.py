@@ -25,7 +25,7 @@ def load_test_dataset(model_name='../word2vec_only_train.model',
                       min_len=2,
                       ):
     
-    dataset = [i.split(' ') for i in open(os.path.join(directory,'test_input.txt'), 'r', encoding='UTF-8').read().split('\n')][:10]
+    dataset = [i.split(' ') for i in open(os.path.join(directory, 'test_input.txt'), 'r', encoding='UTF-8').read().split('\n')[:10]]
     
     w2v_model = word2vec.Word2Vec.load(model_name)
     
@@ -75,7 +75,7 @@ def inference(times):
     test_x, w2i = load_test_dataset()
     i2w = {w2i[i]:i for i in w2i.keys()}
     tensor_x = torch.stack([torch.from_numpy(np.array(i)) for i in test_x])
-    Transformer_model = torch.load('../../../../MLDS_models/hw2-2/checkpoint/epoch_1_checkpoint_700_Slowv5.pkl')
+    Transformer_model = torch.load('../../../../MLDS_models/hw2-2/checkpoint/epoch_1_checkpoint_410_Slowv6.pkl')
     Transformer_model.eval()
     #print([[i2w[j] for j in i]for i in test_x])
     results = []
@@ -87,11 +87,12 @@ def inference(times):
         print([i2w[word] for word in test_sent.contiguous().cpu().numpy()[0]])
         for i in range(times):
             #print([i2w[word] for word in test_y.contiguous().cpu().numpy()[0]])
+            memory = test_y
             test_y = Transformer_model(test_sent, test_y, mask, mask)
             test_y = torch.argmax(Transformer_model.generator(test_y), dim=2)
-            test_y[0,i+1:] = 0
-            test_y[0,0] = 1
-            
+            test_y[0, i+1:] = 0
+            test_y[0, :i] = memory[0, :i]
+                        
         result = test_y.cpu().numpy()[0]
         result = [i2w[word] for word in result]
         print(result)

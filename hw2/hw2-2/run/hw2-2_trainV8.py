@@ -31,7 +31,7 @@ torch.manual_seed(1)
 
 ###HYPERPARAMETER###
 EPOCH      = 5
-BATCHSIZE  = 64
+BATCHSIZE  = 96
 ADAMPARAM  = {'lr':0.001, 'betas':(0.9, 0.98), 'eps':1e-09}#, 'weight_decay':1e-05}
 
 def load_dataset(word2idx,
@@ -229,7 +229,7 @@ def lrate_refresh(lr,
     
     return d_model ** (-0.5) * min(step_num ** (-0.5), step_num * warmup_steps ** (-1.5))
 
-def criterion(pred, target, smooth=0.1, vocab=71475, pad_len=20, batch_size=64):
+def criterion(pred, target, smooth=0.1, vocab=71475, pad_len=20, batch_size=96):
     
     smooth_target = torch.zeros((pad_len*batch_size, vocab))
     for i, j in enumerate(target):
@@ -323,9 +323,10 @@ def main(args):
             
             for ite in range(20):
                 optimizer.zero_grad()
-                pred = Transformer_model(b_x, mask_unpred(b_y, ite), mask, mask)
+                mask_b_y = mask_unpred(b_y, ite)
+                pred = Transformer_model(b_x, mask_b_y, mask, mask)
                 pred = Transformer_model.generator(pred)
-                loss = loss_func(pred.contiguous().view(-1, pred.size(-1)),  b_y.contiguous().view(-1))
+                loss = loss_func(pred.contiguous().view(-1, pred.size(-1)),  mask_b_y.contiguous().view(-1))
                 loss.backward(retain_graph=True)
                 optimizer.step()
             scheduler.step()
