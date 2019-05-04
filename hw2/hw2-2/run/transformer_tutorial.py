@@ -281,13 +281,15 @@ class Embeddings(nn.Module):
                  pretrained_weight=None,
                  ):
         super(Embeddings, self).__init__()
-        lut = nn.Embedding(vocab, d_model)
-        if pretrained_weight is not None:
-            self.lut = lut
+        if pretrained_weight is None:
+            self.lut = nn.Embedding(vocab, d_model)
         else:
-            self.lut = lut.weight.data.copy_(torch.from_numpy(pretrained_weight))
+            self.lut = nn.Embedding(vocab, d_model)
+            self.lut.weight.data.copy_(torch.from_numpy(pretrained_weight))
+            self.lut.weight.requires_grad = False
         self.d_model = d_model
     def forward(self, x):
+        
         return self.lut(x) * math.sqrt(self.d_model)
     
 """

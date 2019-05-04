@@ -75,7 +75,7 @@ def inference(times):
     test_x, w2i = load_test_dataset()
     i2w = {w2i[i]:i for i in w2i.keys()}
     tensor_x = torch.stack([torch.from_numpy(np.array(i)) for i in test_x])
-    Transformer_model = torch.load('../../../../MLDS_models/hw2-2/checkpoint/epoch_1_checkpoint_410_Slowv6.pkl')
+    Transformer_model = torch.load('../../../../MLDS_models/hw2-2/checkpoint/epoch_1_checkpoint_2850_Slowv7.pkl')
     Transformer_model.eval()
     #print([[i2w[j] for j in i]for i in test_x])
     results = []
@@ -91,7 +91,7 @@ def inference(times):
             test_y = Transformer_model(test_sent, test_y, mask, mask)
             test_y = torch.argmax(Transformer_model.generator(test_y), dim=2)
             test_y[0, i+1:] = 0
-            test_y[0, :i] = memory[0, :i]
+            #test_y[0, :i] = memory[0, :i]
                         
         result = test_y.cpu().numpy()[0]
         result = [i2w[word] for word in result]
