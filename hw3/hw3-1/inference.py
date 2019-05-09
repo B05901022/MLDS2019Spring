@@ -1,8 +1,9 @@
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Sun May  5 22:00:31 2019
+Created on Fri May 10 00:43:02 2019
 
-@author: Austin Hsu
+@author: austinhsu
 """
 
 import os
@@ -95,23 +96,7 @@ class Discriminator(nn.Module):
         x = x.view(-1)
         x = self.to_out(x)
         return x
-
-def criterion_d(generated, data, samplesize):
-    
-    """
-    (batch, channel, height, weight)
-    """
-    
-    return (torch.sum(generated) - torch.sum(data)) / samplesize
-    
-def criterion_g(generated, samplesize):
-    
-    """
-    (batch, channel, height, weight)
-    """
-    
-    return torch.sum(generated) / samplesize * -1
-    
+   
 def main(args):
     
     """
@@ -126,73 +111,30 @@ def main(args):
     ------//
     """
     
-    train_generator = Generator().cuda()
-    train_discriminator = Discriminator().cuda()
-    
-    optimizer_g = torch.optim.Adam(train_generator.parameters(), **ADAMPARAM)
-    optimizer_d = torch.optim.Adam(train_discriminator.parameters(), **ADAMPARAM)
-    
-    loss_func_g = criterion_g
-    loss_func_d = criterion_d
-    
+    test_generator = torch.load(args.model_directory + args.model_name + '_epoch_' + args.epoch + '_generator.pkl').cuda()
+    test_discriminator = torch.load(args.model_directory + args.model_name + '_epoch_' + args.epoch + '_discriminator.pkl').cuda()
+
     noise_distribution = torch.distributions.Normal(torch.Tensor([0.0]), torch.Tensor([1.0]))
     
-    print('Training starts...')
+    print('Testing starts...')
     
-    for e in range(args.epoch):
-        print('Epoch ', e+1)
-        #epoch_loss = 0
-        
-        for b_num, (b_x, b_y) in enumerate(tqdm(train_dataloader)):
-            
-            """
-            Train D
-            """
-            
-            sample_tag = torch.from_numpy(np.random.choice(BATCHSIZE, BATCHSIZE//10, replace=False))
-            data_d     = b_x.index_select(1, sample_tag).cuda()
-            sample_noise = noise_distribution.sample(BATCHSIZE//10, 100).squeeze(2).cuda()
-            optimizer_d.zero_grad()
-            generated = train_discriminator(train_generator(sample_noise))
-            data_d    = train_discriminator(data_d)
-            dloss = loss_d(generated, data_d, BATCHSIZE//10)
-            dloss.backward()
-            optimizer_d.step()
-            
-            ##################################################################################################################
-            
-            """
-            Train G
-            """
-            
-            for generating_train in range(args.k):
-                sample_noise = noise_distribution.sample(BATCHSIZE//10, 100).squeeze(2).cuda()
-                generated = train_discriminator(train_generator(sample_noise))
-                optimizer_g.zero_grad()
-                gloss = loss_g(generated, BATCHSIZE//10)
-                gloss.backward()
-                optimizer_g.step()
-            
-            ##################################################################################################################
-            
-            """
-            Save Model
-            """
-            
-            torch.save(train_generator, args.model_directory + args.model_name + '_epoch_' + e+1 + '_generator.pkl')
-            torch.save(optimizer_g, args.model_directory + args.model_name + '_epoch_' + e+1 + '_generator.optim')
-            torch.save(train_discriminator, args.model_directory + args.model_name + '_epoch_' + e+1 + '_discriminator.pkl')
-            torch.save(optimizer_d, args.model_directory + args.model_name + '_epoch_' + e+1 + '_discriminator.optim')
+    for e in tqdm(range(25)):
+        sample_noise = noise_distribution.sample(25, 100).squeeze(2).cuda()
+        generated_waifu = test_generator(sample_noise)
     
-    print('Training finished.')
+        """
+        SAVE PICTURE
+        """
+    
+    print('Testing finished.')
     return
     
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('--data_directory', '-dd', type=str, default='../../../../MLDS_dataset/hw3-1/AnimeDataset/faces/')
+    #parser.add_argument('--data_directory', '-dd', type=str, default='../../../../MLDS_dataset/hw3-1/AnimeDataset/faces/')
     parser.add_argument('--model_name', '-mn', type=str, default='GAN_1')
     parser.add_argument('--model_directory', '-md', type=str, default='../../../../MLDS_models/hw3-1/')
     parser.add_argument('--epoch', '-e', type=int, default=50)
-    parser.add_argument('--k', '-k', type=int, default=3)
+    #parser.add_argument('--k', '-k', type=int, default=3)
     args = parser.parse_args()
     main(args)         
