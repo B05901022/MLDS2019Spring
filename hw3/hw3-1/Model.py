@@ -12,6 +12,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
+from tqdm import tqdm
+import numpy as np
 
 """
 ConvTranspose2d:
@@ -20,6 +22,7 @@ ConvTranspose2d:
 """
 
 ADAMPARAM = {'lr':0.0002, betas=(0.5, 0.999), eps=1e-5}
+BATCHSIZE = 512
 
 class Generator(nn.Module):
     def __init__(self):
@@ -94,6 +97,71 @@ class Discriminator(nn.Module):
         x = self.to_out(x)
         return x
 
-
+def criterion_d(generated, data, batchsize):
+    
+    """
+    (batch, channel, height, weight)
+    """
+    
+    return (torch.sum(generated) - torch.sum(data)) / batchsize
+    
+def criterion_g(generated, batchsize):
+    
+    """
+    (batch, channel, height, weight)
+    """
+    
+    return torch.sum(generated) / batchsize * -1
+    
+def main(args):
+    
+    """
+    //---------------------------------
+    Data loading and data preprocessing
+    ---------------------------------//
+    """
+    
+    """
+    //------
+    Training
+    ------//
+    """
+    
+    train_generator = Generator().cuda()
+    train_discriminator = Discriminator().cuda()
+    
+    optimizer_g = torch.optim.Adam(train_generator.parameters(), **ADAMPARAM)
+    optimizer_d = torch.optim.Adam(train_discriminator.parameters(), **ADAMPARAM)
+    
+    loss_func_g = criterion_g()
+    loss_func_d = criterion_d()
+    
+    print('Training starts...')
+    
+    for e in range(args.epoch):
+        print('Epoch ', e+1)
+        epoch_loss = 0
         
+        for b_num, (b_x, b_y) in enumerate(tqdm(train_dataloader)):
+            
+            """
+            Train D
+            """
+            
+            sample_tag = np.random.randint(0, BATCHSIZE, BATCHSIZE//10)
+            
+        
+    return
+        
+
+    
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--data_directory', '-dd', type=str, default='../../../../MLDS_dataset/hw3-1/AnimeDataset/faces/')
+    parser.add_argument('--model_name', '-mn', type=str, default='GAN_1')
+    parser.add_argument('--model_directory', '-md', type=str, default='../../../../MLDS_models/hw3-1/')
+    parser.add_argument('--epoch', '-e', type=int, default=50)
+    parser.add_argument('--k', '-k', type=int, default=3)
+    args = parser.parse_args()
+    main(args)   
         
