@@ -24,6 +24,7 @@ ConvTranspose2d:
 """
 
 ADAMPARAM = {'lr':0.0002, 'betas':(0.5, 0.999), 'eps':1e-5}
+SGDPARAM  = {'lr':0.0002, 'momentum':0.9}
 BATCHSIZE = 128
 WGANCLIP  = 0.01
 
@@ -142,7 +143,7 @@ def main(args):
     train_discriminator = Discriminator().cuda()
     
     optimizer_g = torch.optim.Adam(train_generator.parameters(), **ADAMPARAM)
-    optimizer_d = torch.optim.SGD(train_discriminator.parameters(), **ADAMPARAM)
+    optimizer_d = torch.optim.SGD(train_discriminator.parameters(), **SGDPARAM)
     
     loss_func_g = criterion_g
     loss_func_d = criterion_d
