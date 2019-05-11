@@ -155,7 +155,7 @@ def main(args):
     for e in range(args.epoch):
         print('Epoch ', e+1)
         epoch_dloss = 0
-        epcoh_gloss = 0
+        epoch_gloss = 0
         
         for b_num, (b_x, b_y) in enumerate(tqdm(train_dataloader)):
             
