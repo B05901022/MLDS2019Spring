@@ -147,12 +147,15 @@ def main(args):
     loss_func_d = criterion_d
     
     noise_distribution = torch.distributions.Normal(torch.Tensor([0.0]), torch.Tensor([1.0]))
+    dloss_record = []
+    gloss_record = []
     
     print('Training starts...')
     
     for e in range(args.epoch):
         print('Epoch ', e+1)
-        #epoch_loss = 0
+        epoch_dloss = 0
+        epcoh_gloss = 0
         
         for b_num, (b_x, b_y) in enumerate(tqdm(train_dataloader)):
             
@@ -171,6 +174,7 @@ def main(args):
             data_d    = train_discriminator(data_d)
             dloss = loss_func_d(generated, data_d, BATCHSIZE)
             dloss.backward()
+            epoch_dloss += dloss.item()
             optimizer_d.step()
             
             ##################################################################################################################
@@ -185,6 +189,7 @@ def main(args):
                 optimizer_g.zero_grad()
                 gloss = loss_func_g(generated, BATCHSIZE)
                 gloss.backward()
+                epoch_gloss += gloss.item()
                 optimizer_g.step()
             
             ##################################################################################################################
@@ -197,8 +202,18 @@ def main(args):
             torch.save(optimizer_g, args.model_directory + args.model_name + '_epoch_' + str(e+1) + '_generator.optim')
             torch.save(train_discriminator, args.model_directory + args.model_name + '_epoch_' + str(e+1) + '_discriminator.pkl')
             torch.save(optimizer_d, args.model_directory + args.model_name + '_epoch_' + str(e+1) + '_discriminator.optim')
+        
+        dloss_record.append(epoch_dloss)
+        gloss_record.append(epoch_gloss)
+        print("Discriminator Loss: ", epoch_dloss)
+        print("Generator Loss: ", epoch_gloss)
     
+    dloss_record = np.array(dloss_record)
+    gloss_record = np.array(gloss_record)
+    np.save("./loss_record/" + args.model_name + "dloss", dloss_record)
+    np.save("./loss_record/" + args.model_name + "gloss", gloss_record)
     print('Training finished.')
+    
     return
     
 if __name__ == "__main__":
