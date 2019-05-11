@@ -14,6 +14,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
 from tqdm import tqdm
+import matplotlib.pyplot as plt
 
 """
 ConvTranspose2d:
@@ -111,21 +112,37 @@ def main(args):
     ------//
     """
     
-    test_generator = torch.load(args.model_directory + args.model_name + '_epoch_' + args.epoch + '_generator.pkl').eval().cuda()
+    test_generator = torch.load(args.model_directory + args.model_name + '_epoch_' + '15' + '_generator.pkl').eval().cuda()
     #test_discriminator = torch.load(args.model_directory + args.model_name + '_epoch_' + args.epoch + '_discriminator.pkl').cuda()
 
     noise_distribution = torch.distributions.Normal(torch.Tensor([0.0]), torch.Tensor([1.0]))
     
     print('Testing starts...')
-    
-    for e in tqdm(range(25)):
-        sample_noise = noise_distribution.sample(25, 100).squeeze(2).cuda()
+
+    for e in tqdm(range(1)):
+        sample_noise = noise_distribution.sample((25, 100)).squeeze(2).cuda()
         generated_waifu = test_generator(sample_noise)
-    
+        
         """
         SAVE PICTURE
         """
-    
+        
+        r, c = 5, 5
+        generated_waifu = generated_waifu + torch.ones((25,3,64,64)).cuda()
+        generated_waifu = generated_waifu * 255/2
+        generated_waifu = generated_waifu.detach().cpu().numpy().astype(np.int32)
+        generated_waifu = np.transpose(generated_waifu, [0,2,3,1])
+        fig, axs = plt.subplots(r, c)
+        cnt = 0
+        for i in range(r):
+            for j in range(c):
+                axs[i,j].imshow(generated_waifu[cnt, :,:,:])
+                axs[i,j].axis('off')
+                cnt += 1
+        fig.savefig("./generated/" + args.model_name +".png")
+        plt.close()
+        
+        
     print('Testing finished.')
     return
     
