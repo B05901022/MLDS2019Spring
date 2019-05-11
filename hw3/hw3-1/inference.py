@@ -133,7 +133,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     #parser.add_argument('--data_directory', '-dd', type=str, default='../../../../MLDS_dataset/hw3-1/AnimeDataset/faces/')
     parser.add_argument('--model_name', '-mn', type=str, default='GAN_1')
-    parser.add_argument('--model_directory', '-md', type=str, default='../../../../MLDS_models/hw3-1/')
+    parser.add_argument('--model_directory', '-md', type=str, default='../../../MLDS_models/hw3-1/')
     parser.add_argument('--epoch', '-e', type=int, default=50)
     #parser.add_argument('--k', '-k', type=int, default=3)
     args = parser.parse_args()

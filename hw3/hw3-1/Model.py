@@ -24,7 +24,7 @@ ConvTranspose2d:
 """
 
 ADAMPARAM = {'lr':0.0002, 'betas':(0.5, 0.999), 'eps':1e-5}
-BATCHSIZE = 512
+BATCHSIZE = 256
 
 class Generator(nn.Module):
     def __init__(self):
@@ -82,11 +82,13 @@ class Discriminator(nn.Module):
                                         nn.Conv2d(64,
                                                   128,
                                                   kernel_size=4,
+                                                  padding=0,
                                                   ), #128 * 57 * 57
                                         nn.ReLU(),
                                         nn.Conv2d(128,
                                                   256,
                                                   kernel_size=4,
+                                                  padding=0,
                                                   ), #256 * 54 * 54
                                         nn.ReLU(),
                                         )
@@ -95,7 +97,7 @@ class Discriminator(nn.Module):
                                     )
     def forward(self, x):
         x = self.conv_layers(x)
-        x = x.view(-1)
+        x = x.view(-1, 256*54*54)
         x = self.to_out(x)
         return x
 
@@ -158,13 +160,16 @@ def main(args):
             Train D
             """
             
+            """
             sample_tag = torch.from_numpy(np.random.choice(BATCHSIZE, BATCHSIZE//10, replace=False))
-            data_d     = b_x.index_select(1, sample_tag).cuda()
-            sample_noise = noise_distribution.sample(BATCHSIZE//10, 100).squeeze(2).cuda()
+            data_d     = torch.index_select(b_x, 1, sample_tag).cuda()
+            """
+            data_d     = b_x.cuda()
+            sample_noise = noise_distribution.sample((BATCHSIZE, 100)).squeeze(2).cuda()
             optimizer_d.zero_grad()
             generated = train_discriminator(train_generator(sample_noise))
             data_d    = train_discriminator(data_d)
-            dloss = loss_func_d(generated, data_d, BATCHSIZE//10)
+            dloss = loss_func_d(generated, data_d, BATCHSIZE)
             dloss.backward()
             optimizer_d.step()
             
@@ -175,10 +180,10 @@ def main(args):
             """
             
             for generating_train in range(args.k):
-                sample_noise = noise_distribution.sample(BATCHSIZE//10, 100).squeeze(2).cuda()
+                sample_noise = noise_distribution.sample((BATCHSIZE, 100)).squeeze(2).cuda()
                 generated = train_discriminator(train_generator(sample_noise))
                 optimizer_g.zero_grad()
-                gloss = loss_func_g(generated, BATCHSIZE//10)
+                gloss = loss_func_g(generated, BATCHSIZE)
                 gloss.backward()
                 optimizer_g.step()
             
@@ -188,10 +193,10 @@ def main(args):
             Save Model
             """
             
-            torch.save(train_generator, args.model_directory + args.model_name + '_epoch_' + e+1 + '_generator.pkl')
-            torch.save(optimizer_g, args.model_directory + args.model_name + '_epoch_' + e+1 + '_generator.optim')
-            torch.save(train_discriminator, args.model_directory + args.model_name + '_epoch_' + e+1 + '_discriminator.pkl')
-            torch.save(optimizer_d, args.model_directory + args.model_name + '_epoch_' + e+1 + '_discriminator.optim')
+            torch.save(train_generator, args.model_directory + args.model_name + '_epoch_' + str(e+1) + '_generator.pkl')
+            torch.save(optimizer_g, args.model_directory + args.model_name + '_epoch_' + str(e+1) + '_generator.optim')
+            torch.save(train_discriminator, args.model_directory + args.model_name + '_epoch_' + str(e+1) + '_discriminator.pkl')
+            torch.save(optimizer_d, args.model_directory + args.model_name + '_epoch_' + str(e+1) + '_discriminator.optim')
     
     print('Training finished.')
     return
