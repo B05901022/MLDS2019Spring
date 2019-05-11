@@ -9,8 +9,11 @@ import os
 import cv2
 import argparse
 import torch
+import torchvision
+import torchvision.transforms as transforms
 import torch.nn as nn
 import torch.nn.functional as F
+import torch.utils.data as Data
 import numpy as np
 from tqdm import tqdm
 
@@ -119,6 +122,12 @@ def main(args):
     Data loading and data preprocessing
     ---------------------------------//
     """
+    transform = transforms.Compose(
+            [transforms.Scale([64,64]),
+             transforms.ToTensor(),
+             transforms.Normalize((0.5,0.5,0.5),(0.5,0.5,0.5))])
+    traindata = torchvision.datasets.ImageFolder(root=args.data_directory, transform=transform)
+    train_dataloader = Data.dataloader(traindata, batchsize=BATCHSIZE)
     
     """
     //------
@@ -155,7 +164,7 @@ def main(args):
             optimizer_d.zero_grad()
             generated = train_discriminator(train_generator(sample_noise))
             data_d    = train_discriminator(data_d)
-            dloss = loss_d(generated, data_d, BATCHSIZE//10)
+            dloss = loss_func_d(generated, data_d, BATCHSIZE//10)
             dloss.backward()
             optimizer_d.step()
             
@@ -169,7 +178,7 @@ def main(args):
                 sample_noise = noise_distribution.sample(BATCHSIZE//10, 100).squeeze(2).cuda()
                 generated = train_discriminator(train_generator(sample_noise))
                 optimizer_g.zero_grad()
-                gloss = loss_g(generated, BATCHSIZE//10)
+                gloss = loss_func_g(generated, BATCHSIZE//10)
                 gloss.backward()
                 optimizer_g.step()
             
