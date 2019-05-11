@@ -25,6 +25,7 @@ ConvTranspose2d:
 
 ADAMPARAM = {'lr':0.0002, 'betas':(0.5, 0.999), 'eps':1e-5}
 BATCHSIZE = 128
+WGANCLIP  = 0.01
 
 class Generator(nn.Module):
     def __init__(self):
@@ -36,14 +37,14 @@ class Generator(nn.Module):
                                                             stride=2, 
                                                             padding=1,
                                                             ), #128 * 32 * 32
-                                        nn.ReLU(),
+                                        nn.LeakyReLU(),
                                         nn.ConvTranspose2d(128,
                                                            64,
                                                            kernel_size=4,
                                                            stride=2,
                                                            padding=1,
                                                            ), #64 * 64 * 64
-                                        nn.ReLU(),
+                                        nn.LeakyReLU(),
                                         nn.ConvTranspose2d(64,
                                                            3,
                                                            kernel_size=3,
@@ -72,25 +73,25 @@ class Discriminator(nn.Module):
                                                    kernel_size=4,
                                                    padding=0,
                                                    ), #32 * 61 * 61
-                                        nn.ReLU(),
+                                        nn.LeakyReLU(),
                                         nn.Conv2d(32,
                                                   64,
                                                   kernel_size=4,
                                                   padding=1,
                                                   ), #64 * 60 * 60
-                                        nn.ReLU(),
+                                        nn.LeakyReLU(),
                                         nn.Conv2d(64,
                                                   128,
                                                   kernel_size=4,
                                                   padding=0,
                                                   ), #128 * 57 * 57
-                                        nn.ReLU(),
+                                        nn.LeakyReLU(),
                                         nn.Conv2d(128,
                                                   256,
                                                   kernel_size=4,
                                                   padding=0,
                                                   ), #256 * 54 * 54
-                                        nn.ReLU(),
+                                        nn.LeakyReLU(),
                                         )
         self.to_out = nn.Sequential(nn.Linear(256*54*54, 1),
                                     nn.Sigmoid(),
@@ -141,7 +142,7 @@ def main(args):
     train_discriminator = Discriminator().cuda()
     
     optimizer_g = torch.optim.Adam(train_generator.parameters(), **ADAMPARAM)
-    optimizer_d = torch.optim.Adam(train_discriminator.parameters(), **ADAMPARAM)
+    optimizer_d = torch.optim.SGD(train_discriminator.parameters(), **ADAMPARAM)
     
     loss_func_g = criterion_g
     loss_func_d = criterion_d
@@ -167,15 +168,19 @@ def main(args):
             sample_tag = torch.from_numpy(np.random.choice(BATCHSIZE, BATCHSIZE//10, replace=False))
             data_d     = torch.index_select(b_x, 1, sample_tag).cuda()
             """
-            data_d     = b_x.cuda()
-            sample_noise = noise_distribution.sample((BATCHSIZE, 100)).squeeze(2).cuda()
-            optimizer_d.zero_grad()
-            generated = train_discriminator(train_generator(sample_noise))
-            data_d    = train_discriminator(data_d)
-            dloss = loss_func_d(generated, data_d, BATCHSIZE)
-            dloss.backward()
-            epoch_dloss += dloss.item()
-            optimizer_d.step()
+            for generating_train in range(args.k):
+                data_d     = b_x.cuda()
+                sample_noise = noise_distribution.sample((BATCHSIZE, 100)).squeeze(2).cuda()
+                optimizer_d.zero_grad()
+                generated = train_generator(sample_noise)
+                generated = train_discriminator(generated)
+                data_d    = train_discriminator(data_d)
+                dloss = loss_func_d(generated, data_d, BATCHSIZE)
+                dloss.backward()
+                epoch_dloss += dloss.item()
+                optimizer_d.step()
+                for param in train_discriminator.parameters():
+                    param = torch.clamp(param, -WGANCLIP, WGANCLIP)
             
             ##################################################################################################################
             
@@ -183,14 +188,14 @@ def main(args):
             Train G
             """
             
-            for generating_train in range(args.k):
-                sample_noise = noise_distribution.sample((BATCHSIZE, 100)).squeeze(2).cuda()
-                generated = train_discriminator(train_generator(sample_noise))
-                optimizer_g.zero_grad()
-                gloss = loss_func_g(generated, BATCHSIZE)
-                gloss.backward()
-                epoch_gloss += gloss.item()
-                optimizer_g.step()
+            sample_noise = noise_distribution.sample((BATCHSIZE, 100)).squeeze(2).cuda()
+            generated = train_generator(sample_noise)
+            generated = train_discriminator(generated)
+            optimizer_g.zero_grad()
+            gloss = loss_func_g(generated, BATCHSIZE)
+            gloss.backward()
+            epoch_gloss += gloss.item()
+            optimizer_g.step()
             
             ##################################################################################################################
             
@@ -222,6 +227,6 @@ if __name__ == "__main__":
     parser.add_argument('--model_name', '-mn', type=str, default='GAN_1')
     parser.add_argument('--model_directory', '-md', type=str, default='../../../MLDS_models/hw3-1/')
     parser.add_argument('--epoch', '-e', type=int, default=50)
-    parser.add_argument('--k', '-k', type=int, default=3)
+    parser.add_argument('--k', '-k', type=int, default=5)
     args = parser.parse_args()
     main(args)         
