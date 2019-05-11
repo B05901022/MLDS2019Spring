@@ -24,7 +24,7 @@ ConvTranspose2d:
 """
 
 ADAMPARAM = {'lr':0.0002, 'betas':(0.5, 0.999), 'eps':1e-5}
-BATCHSIZE = 256
+BATCHSIZE = 128
 
 class Generator(nn.Module):
     def __init__(self):
