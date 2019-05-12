@@ -25,7 +25,7 @@ ConvTranspose2d:
 
 ADAMPARAM = {'lr':0.0002, 'betas':(0.5, 0.999), 'eps':1e-5}
 SGDPARAM  = {'lr':0.0002, 'momentum':0.9}
-BATCHSIZE = 128
+BATCHSIZE = 64
 WGANCLIP  = 0.01
 
 class Generator(nn.Module):
@@ -38,6 +38,7 @@ class Generator(nn.Module):
                                                             stride=2, 
                                                             padding=1,
                                                             ), #128 * 32 * 32
+                                        nn.BatchNorm2d(128),
                                         nn.LeakyReLU(),
                                         nn.ConvTranspose2d(128,
                                                            64,
@@ -45,6 +46,7 @@ class Generator(nn.Module):
                                                            stride=2,
                                                            padding=1,
                                                            ), #64 * 64 * 64
+                                        nn.BatchNorm2d(64),
                                         nn.LeakyReLU(),
                                         nn.ConvTranspose2d(64,
                                                            3,
@@ -52,6 +54,7 @@ class Generator(nn.Module):
                                                            stride=1,
                                                            padding=1,
                                                            ), #64 * 3 * 3
+                                        nn.BatchNorm2d(3),
                                         nn.Tanh(),
                                         )
     def forward(self, x):
@@ -74,24 +77,28 @@ class Discriminator(nn.Module):
                                                    kernel_size=4,
                                                    padding=0,
                                                    ), #32 * 61 * 61
+                                        nn.BatchNorm2d(32),
                                         nn.LeakyReLU(),
                                         nn.Conv2d(32,
                                                   64,
                                                   kernel_size=4,
                                                   padding=1,
                                                   ), #64 * 60 * 60
+                                        nn.BatchNorm2d(64),
                                         nn.LeakyReLU(),
                                         nn.Conv2d(64,
                                                   128,
                                                   kernel_size=4,
                                                   padding=0,
                                                   ), #128 * 57 * 57
+                                        nn.BatchNorm2d(128),
                                         nn.LeakyReLU(),
                                         nn.Conv2d(128,
                                                   256,
                                                   kernel_size=4,
                                                   padding=0,
                                                   ), #256 * 54 * 54
+                                        nn.BatchNorm2d(256),
                                         nn.LeakyReLU(),
                                         )
         self.to_out = nn.Sequential(nn.Linear(256*54*54, 1),
@@ -143,7 +150,7 @@ def main(args):
     train_discriminator = Discriminator().cuda()
     
     optimizer_g = torch.optim.Adam(train_generator.parameters(), **ADAMPARAM)
-    optimizer_d = torch.optim.SGD(train_discriminator.parameters(), **SGDPARAM)
+    optimizer_d = torch.optim.Adam(train_discriminator.parameters(), **ADAMPARAM)
     
     loss_func_g = criterion_g
     loss_func_d = criterion_d
@@ -224,10 +231,10 @@ def main(args):
     
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('--data_directory', '-dd', type=str, default='../../../MLDS_dataset/hw3-1/AnimeDataset/')
+    parser.add_argument('--data_directory', '-dd', type=str, default='../../../MLDS_dataset/hw3-1/extra_data2/')
     parser.add_argument('--model_name', '-mn', type=str, default='GAN_1')
     parser.add_argument('--model_directory', '-md', type=str, default='../../../MLDS_models/hw3-1/')
     parser.add_argument('--epoch', '-e', type=int, default=50)
-    parser.add_argument('--k', '-k', type=int, default=5)
+    parser.add_argument('--k', '-k', type=int, default=2)
     args = parser.parse_args()
     main(args)         
