@@ -31,7 +31,9 @@ WGANCLIP  = 0.01
 class Generator(nn.Module):
     def __init__(self):
         super(Generator, self).__init__()
-        self.to_2d = nn.Linear(100, 128*16*16)
+        self.to_2d = nn.Sequential(nn.Linear(100, 128*16*16),
+                                   nn.LeakyReLU(),
+                                   )
         self.conv_layers = nn.Sequential(nn.ConvTranspose2d(128, 
                                                             128, 
                                                             kernel_size=4, 

@@ -112,7 +112,7 @@ def main(args):
     ------//
     """
     
-    test_generator = torch.load(args.model_directory + args.model_name + '_epoch_' + '20' + '_generator.pkl').eval().cuda()
+    test_generator = torch.load(args.model_directory + args.model_name + '_epoch_' + '9' + '_generator.pkl').eval().cuda()
     #test_discriminator = torch.load(args.model_directory + args.model_name + '_epoch_' + args.epoch + '_discriminator.pkl').cuda()
 
     noise_distribution = torch.distributions.Normal(torch.Tensor([0.0]), torch.Tensor([1.0]))
