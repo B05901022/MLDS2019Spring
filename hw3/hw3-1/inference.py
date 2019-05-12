@@ -112,7 +112,7 @@ def main(args):
     ------//
     """
     
-    test_generator = torch.load(args.model_directory + args.model_name + '_epoch_' + '9' + '_generator.pkl').eval().cuda()
+    test_generator = torch.load(args.model_directory + args.model_name + '_epoch_' + '5' + '_generator.pkl').eval().cuda()
     #test_discriminator = torch.load(args.model_directory + args.model_name + '_epoch_' + args.epoch + '_discriminator.pkl').cuda()
 
     noise_distribution = torch.distributions.Normal(torch.Tensor([0.0]), torch.Tensor([1.0]))
@@ -149,7 +149,7 @@ def main(args):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     #parser.add_argument('--data_directory', '-dd', type=str, default='../../../../MLDS_dataset/hw3-1/AnimeDataset/faces/')
-    parser.add_argument('--model_name', '-mn', type=str, default='WGAN1')
+    parser.add_argument('--model_name', '-mn', type=str, default='WGAN2')
     parser.add_argument('--model_directory', '-md', type=str, default='../../../MLDS_models/hw3-1/')
     parser.add_argument('--epoch', '-e', type=int, default=50)
     #parser.add_argument('--k', '-k', type=int, default=3)
