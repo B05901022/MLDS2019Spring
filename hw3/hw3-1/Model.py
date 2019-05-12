@@ -168,8 +168,9 @@ def main(args):
         epoch_dloss = 0
         epoch_gloss = 0
         
-        for b_num, b_x in enumerate(tqdm(train_dataloader)):
-            
+        
+        for b_num, (b_x, b_y) in enumerate(tqdm(train_dataloader)):
+
             """
             Train D
             """
@@ -199,9 +200,9 @@ def main(args):
             """
             
             sample_noise = noise_distribution.sample((BATCHSIZE, 100)).squeeze(2).cuda()
+            optimizer_g.zero_grad()
             generated = train_generator(sample_noise)
             generated = train_discriminator(generated)
-            optimizer_g.zero_grad()
             gloss = loss_func_g(generated, BATCHSIZE)
             gloss.backward()
             epoch_gloss += gloss.item()
@@ -233,7 +234,7 @@ def main(args):
     
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('--data_directory', '-dd', type=str, default='../../../MLDS_dataset/hw3-1/extra_data2/')
+    parser.add_argument('--data_directory', '-dd', type=str, default='../../../MLDS_dataset/hw3-1/extra_data2/')#AnimeDataset/
     parser.add_argument('--model_name', '-mn', type=str, default='GAN_1')
     parser.add_argument('--model_directory', '-md', type=str, default='../../../MLDS_models/hw3-1/')
     parser.add_argument('--epoch', '-e', type=int, default=50)
