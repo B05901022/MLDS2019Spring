@@ -118,7 +118,7 @@ def criterion_d(generated, data, samplesize):
     (batch, channel, height, weight)
     """
     
-    return (torch.sum(torch.log(generated)) - torch.sum(torch.log(data))) / samplesize
+    return (torch.sum(torch.log(torch.ones((samplesize,1)).cuda()-generated)) + torch.sum(torch.log(data))) / samplesize * -1
     #return (torch.sum(generated) - torch.sum(data)) / samplesize
     
 def criterion_g(generated, samplesize):
@@ -220,7 +220,7 @@ def main(args):
             torch.save(optimizer_g, args.model_directory + args.model_name + '_epoch_' + str(e+1) + '_generator.optim')
             torch.save(train_discriminator, args.model_directory + args.model_name + '_epoch_' + str(e+1) + '_discriminator.pkl')
             torch.save(optimizer_d, args.model_directory + args.model_name + '_epoch_' + str(e+1) + '_discriminator.optim')
-            print('Discriminator Loss: ', epoch_dloss, 'Generator Loss: ', epoch_gloss, end='\r')
+            print('batch: ', b_num, 'Discriminator Loss: ', epoch_dloss, 'Generator Loss: ', epoch_gloss, end='\r')
         
         dloss_record.append(epoch_dloss)
         gloss_record.append(epoch_gloss)
