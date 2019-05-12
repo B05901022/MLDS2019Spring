@@ -218,7 +218,7 @@ def main(args):
             torch.save(optimizer_g, args.model_directory + args.model_name + '_epoch_' + str(e+1) + '_generator.optim')
             torch.save(train_discriminator, args.model_directory + args.model_name + '_epoch_' + str(e+1) + '_discriminator.pkl')
             torch.save(optimizer_d, args.model_directory + args.model_name + '_epoch_' + str(e+1) + '_discriminator.optim')
-            print('Discriminator Loss: ', epoch_dloss 'Generator Loss: ', epoch_gloss, end='\r')
+            print('Discriminator Loss: ', epoch_dloss, 'Generator Loss: ', epoch_gloss, end='\r')
         
         dloss_record.append(epoch_dloss)
         gloss_record.append(epoch_gloss)
