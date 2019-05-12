@@ -118,7 +118,8 @@ def criterion_d(generated, data, samplesize):
     (batch, channel, height, weight)
     """
     
-    return (torch.sum(generated) - torch.sum(data)) / samplesize
+    return (torch.sum(torch.log(generated)) - torch.sum(torch.log(data))) / samplesize
+    #return (torch.sum(generated) - torch.sum(data)) / samplesize
     
 def criterion_g(generated, samplesize):
     
@@ -126,7 +127,7 @@ def criterion_g(generated, samplesize):
     (batch, channel, height, weight)
     """
     
-    return torch.sum(generated) / samplesize * -1
+    return torch.sum(torch.log(generated)) / samplesize * -1
     
 def main(args):
     
@@ -190,9 +191,10 @@ def main(args):
                 dloss.backward()
                 epoch_dloss += dloss.item()
                 optimizer_d.step()
+                """
                 for param in train_discriminator.parameters():
                     param = torch.clamp(param, -1* WGANCLIP, WGANCLIP)
-            
+                """
             ##################################################################################################################
             
             """
