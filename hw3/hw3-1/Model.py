@@ -57,7 +57,7 @@ class Generator(nn.Module):
                                                            stride=1,
                                                            padding=1,
                                                            ), #64 * 3 * 3
-                                        nn.Sigmoid(),
+                                        nn.Tanh(),
                                         )
     def forward(self, x):
         x = self.to_2d(x)
@@ -143,6 +143,7 @@ def main(args):
     traindata = torchvision.datasets.ImageFolder(root=args.data_directory, transform=transform)
     train_dataloader = Data.DataLoader(traindata, batch_size=BATCHSIZE)
     
+    total_batch = len(traindata) / BATCHSIZE    
     """
     //------
     Training
@@ -220,7 +221,7 @@ def main(args):
             torch.save(optimizer_g, args.model_directory + args.model_name + '_epoch_' + str(e+1) + '_generator.optim')
             torch.save(train_discriminator, args.model_directory + args.model_name + '_epoch_' + str(e+1) + '_discriminator.pkl')
             torch.save(optimizer_d, args.model_directory + args.model_name + '_epoch_' + str(e+1) + '_discriminator.optim')
-            print('batch: ', b_num, 'Discriminator Loss: ', epoch_dloss, 'Generator Loss: ', epoch_gloss, end='\r')
+            print('batch: ', b_num, '/', total_batch, ' Discriminator Loss: ', epoch_dloss, ' Generator Loss: ', epoch_gloss, end='\r')
         
         dloss_record.append(epoch_dloss)
         gloss_record.append(epoch_gloss)
@@ -237,7 +238,7 @@ def main(args):
     
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('--data_directory', '-dd', type=str, default='../../../MLDS_dataset/hw3-1/extra_data2/')#AnimeDataset/
+    parser.add_argument('--data_directory', '-dd', type=str, default='../../../MLDS_dataset/hw3-1/AnimeDataset/')#extra_data2/
     parser.add_argument('--model_name', '-mn', type=str, default='GAN_1')
     parser.add_argument('--model_directory', '-md', type=str, default='../../../MLDS_models/hw3-1/')
     parser.add_argument('--epoch', '-e', type=int, default=50)
