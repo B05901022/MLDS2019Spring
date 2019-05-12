@@ -32,9 +32,10 @@ class Generator(nn.Module):
     def __init__(self):
         super(Generator, self).__init__()
         self.to_2d = nn.Sequential(nn.Linear(100, 128*16*16),
-                                   nn.LeakyReLU(),
                                    )
-        self.conv_layers = nn.Sequential(nn.ConvTranspose2d(128, 
+        self.conv_layers = nn.Sequential(nn.BatchNorm(128),
+                                         nn.LeakyReLU(),
+                                         nn.ConvTranspose2d(128, 
                                                             128, 
                                                             kernel_size=4, 
                                                             stride=2, 
@@ -56,7 +57,6 @@ class Generator(nn.Module):
                                                            stride=1,
                                                            padding=1,
                                                            ), #64 * 3 * 3
-                                        nn.BatchNorm2d(3),
                                         nn.Tanh(),
                                         )
     def forward(self, x):
@@ -168,7 +168,7 @@ def main(args):
         epoch_dloss = 0
         epoch_gloss = 0
         
-        for b_num, (b_x, b_y) in enumerate(tqdm(train_dataloader)):
+        for b_num, b_x in enumerate(tqdm(train_dataloader)):
             
             """
             Train D
