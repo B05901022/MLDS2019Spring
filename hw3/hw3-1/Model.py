@@ -33,7 +33,7 @@ class Generator(nn.Module):
         super(Generator, self).__init__()
         self.to_2d = nn.Sequential(nn.Linear(100, 128*16*16),
                                    )
-        self.conv_layers = nn.Sequential(nn.BatchNorm(128),
+        self.conv_layers = nn.Sequential(nn.BatchNorm2d(128),
                                          nn.LeakyReLU(),
                                          nn.ConvTranspose2d(128, 
                                                             128, 
