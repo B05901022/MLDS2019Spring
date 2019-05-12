@@ -225,6 +225,7 @@ def main(args):
         
         dloss_record.append(epoch_dloss)
         gloss_record.append(epoch_gloss)
+        print()
         print("Discriminator Loss: ", epoch_dloss)
         print("Generator Loss: ", epoch_gloss)
     
