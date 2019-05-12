@@ -31,7 +31,7 @@ WGANCLIP  = 0.01
 class Generator(nn.Module):
     def __init__(self):
         super(Generator, self).__init__()
-        self.to_2d = nn.Sequential(nn.Linear(100, 128*16*16),
+        self.to_2d = nn.Sequential(nn.Linear(100,128*16*16),
                                    )
         self.conv_layers = nn.Sequential(nn.BatchNorm2d(128),
                                          nn.LeakyReLU(),
@@ -56,7 +56,7 @@ class Generator(nn.Module):
                                                            kernel_size=3,
                                                            stride=1,
                                                            padding=1,
-                                                           ), #64 * 3 * 3
+                                                           ), #3 * 64 * 64
                                         nn.Tanh(),
                                         )
     def forward(self, x):
@@ -79,29 +79,33 @@ class Discriminator(nn.Module):
                                                    kernel_size=4,
                                                    padding=0,
                                                    ), #32 * 61 * 61
-                                        nn.BatchNorm2d(32),
+                                        #nn.BatchNorm2d(32),
                                         nn.LeakyReLU(),
+                                        #nn.Dropout(0.5),
                                         nn.Conv2d(32,
                                                   64,
                                                   kernel_size=4,
                                                   padding=1,
                                                   ), #64 * 60 * 60
-                                        nn.BatchNorm2d(64),
+                                        #nn.BatchNorm2d(64),
                                         nn.LeakyReLU(),
+                                        #nn.Dropout(0.5),
                                         nn.Conv2d(64,
                                                   128,
                                                   kernel_size=4,
                                                   padding=0,
                                                   ), #128 * 57 * 57
-                                        nn.BatchNorm2d(128),
+                                        #nn.BatchNorm2d(128),
                                         nn.LeakyReLU(),
+                                        #nn.Dropout(0.5),
                                         nn.Conv2d(128,
                                                   256,
                                                   kernel_size=4,
                                                   padding=0,
                                                   ), #256 * 54 * 54
-                                        nn.BatchNorm2d(256),
+                                        #nn.BatchNorm2d(256),
                                         nn.LeakyReLU(),
+                                        #nn.Dropout(0.5),
                                         )
         self.to_out = nn.Sequential(nn.Linear(256*54*54, 1),
                                     nn.Sigmoid(),
@@ -139,11 +143,11 @@ def main(args):
     transform = transforms.Compose(
             [transforms.Scale([64,64]),
              transforms.ToTensor(),
-             transforms.Normalize((0.5,0.5,0.5),(0.5,0.5,0.5))])
+             transforms.Normalize((0.0,0.0,0.0),(1.0,1.0,1.0))])
     traindata = torchvision.datasets.ImageFolder(root=args.data_directory, transform=transform)
     train_dataloader = Data.DataLoader(traindata, batch_size=BATCHSIZE)
     
-    total_batch = len(traindata) / BATCHSIZE    
+    total_batch = len(traindata) // BATCHSIZE    
     """
     //------
     Training
@@ -169,6 +173,8 @@ def main(args):
         print('Epoch ', e+1)
         epoch_dloss = 0
         epoch_gloss = 0
+        old_dloss = 0
+        old_gloss = 0
         
         
         for b_num, (b_x, b_y) in enumerate(train_dataloader):
@@ -221,7 +227,8 @@ def main(args):
             torch.save(optimizer_g, args.model_directory + args.model_name + '_epoch_' + str(e+1) + '_generator.optim')
             torch.save(train_discriminator, args.model_directory + args.model_name + '_epoch_' + str(e+1) + '_discriminator.pkl')
             torch.save(optimizer_d, args.model_directory + args.model_name + '_epoch_' + str(e+1) + '_discriminator.optim')
-            print('batch: ', b_num, '/', total_batch, ' Discriminator Loss: ', epoch_dloss, ' Generator Loss: ', epoch_gloss, end='\r')
+            print('batch: ', b_num, '/', total_batch, ' Discriminator Loss: ', epoch_dloss-old_dloss, ' Generator Loss: ', epoch_gloss-old_gloss, end='\r')
+            old_dloss, old_gloss = epoch_dloss, epoch_gloss
         
         dloss_record.append(epoch_dloss)
         gloss_record.append(epoch_gloss)
