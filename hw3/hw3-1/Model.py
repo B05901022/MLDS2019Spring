@@ -169,7 +169,7 @@ def main(args):
         epoch_gloss = 0
         
         
-        for b_num, (b_x, b_y) in enumerate(tqdm(train_dataloader)):
+        for b_num, (b_x, b_y) in enumerate(train_dataloader):
 
             """
             Train D
@@ -186,12 +186,12 @@ def main(args):
                 generated = train_generator(sample_noise)
                 generated = train_discriminator(generated)
                 data_d    = train_discriminator(data_d)
-                dloss = loss_func_d(generated, data_d, BATCHSIZE)
+                dloss = loss_func_d(generated=generated, data=data_d, samplesize=BATCHSIZE)
                 dloss.backward()
                 epoch_dloss += dloss.item()
                 optimizer_d.step()
                 for param in train_discriminator.parameters():
-                    param = torch.clamp(param, -WGANCLIP, WGANCLIP)
+                    param = torch.clamp(param, -1* WGANCLIP, WGANCLIP)
             
             ##################################################################################################################
             
@@ -203,7 +203,7 @@ def main(args):
             optimizer_g.zero_grad()
             generated = train_generator(sample_noise)
             generated = train_discriminator(generated)
-            gloss = loss_func_g(generated, BATCHSIZE)
+            gloss = loss_func_g(generated=generated, samplesize=BATCHSIZE)
             gloss.backward()
             epoch_gloss += gloss.item()
             optimizer_g.step()
@@ -218,6 +218,7 @@ def main(args):
             torch.save(optimizer_g, args.model_directory + args.model_name + '_epoch_' + str(e+1) + '_generator.optim')
             torch.save(train_discriminator, args.model_directory + args.model_name + '_epoch_' + str(e+1) + '_discriminator.pkl')
             torch.save(optimizer_d, args.model_directory + args.model_name + '_epoch_' + str(e+1) + '_discriminator.optim')
+            print('Discriminator Loss: ', epoch_dloss 'Generator Loss: ', epoch_gloss, end='\r')
         
         dloss_record.append(epoch_dloss)
         gloss_record.append(epoch_gloss)
