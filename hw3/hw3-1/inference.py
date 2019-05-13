@@ -105,7 +105,6 @@ class Discriminator(nn.Module):
                                         nn.Dropout(0.7),
                                         )
         self.to_out = nn.Sequential(nn.Linear(256*54*54, 1),
-                                    nn.Sigmoid(),
                                     )
     def forward(self, x):
         x = self.conv_layers(x)
@@ -164,9 +163,9 @@ def main(args):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     #parser.add_argument('--data_directory', '-dd', type=str, default='../../../../MLDS_dataset/hw3-1/AnimeDataset/faces/')
-    parser.add_argument('--model_name', '-mn', type=str, default='WGAN')
+    parser.add_argument('--model_name', '-mn', type=str, default='LSGAN')
     parser.add_argument('--model_directory', '-md', type=str, default='../../../MLDS_models/hw3-1/')
-    parser.add_argument('--epoch', '-e', type=int, default=1)
+    parser.add_argument('--epoch', '-e', type=int, default=5)
     #parser.add_argument('--k', '-k', type=int, default=3)
     args = parser.parse_args()
     main(args)         
