@@ -24,6 +24,7 @@ ConvTranspose2d:
 """
 
 ADAMPARAM = {'lr':0.0002, 'betas':(0.5, 0.999), 'eps':1e-5}
+ADAMPARAM2= {'lr':0.0001, 'betas':(0.5, 0.999), 'eps':1e-5}
 SGDPARAM  = {'lr':0.0002, 'momentum':0.9}
 BATCHSIZE = 64
 WGANCLIP  = 0.01
@@ -31,11 +32,11 @@ WGANCLIP  = 0.01
 class Generator(nn.Module):
     def __init__(self):
         super(Generator, self).__init__()
-        self.to_2d = nn.Sequential(nn.Linear(100,128*16*16),
+        self.to_2d = nn.Sequential(nn.Linear(100,256*16*16),
                                    )
-        self.conv_layers = nn.Sequential(nn.BatchNorm2d(128),
+        self.conv_layers = nn.Sequential(nn.BatchNorm2d(256),
                                          nn.LeakyReLU(),
-                                         nn.ConvTranspose2d(128, 
+                                         nn.ConvTranspose2d(256, 
                                                             128, 
                                                             kernel_size=4, 
                                                             stride=2, 
@@ -61,7 +62,7 @@ class Generator(nn.Module):
                                         )
     def forward(self, x):
         x = self.to_2d(x)
-        x = x.view(-1, 128, 16, 16)
+        x = x.view(-1, 256, 16, 16)
         x = self.conv_layers(x)
         return x
     
@@ -81,7 +82,7 @@ class Discriminator(nn.Module):
                                                    ), #32 * 61 * 61
                                         #nn.BatchNorm2d(32),
                                         nn.LeakyReLU(),
-                                        #nn.Dropout(0.5),
+                                        nn.Dropout(0.7),
                                         nn.Conv2d(32,
                                                   64,
                                                   kernel_size=4,
@@ -89,7 +90,7 @@ class Discriminator(nn.Module):
                                                   ), #64 * 60 * 60
                                         #nn.BatchNorm2d(64),
                                         nn.LeakyReLU(),
-                                        #nn.Dropout(0.5),
+                                        nn.Dropout(0.7),
                                         nn.Conv2d(64,
                                                   128,
                                                   kernel_size=4,
@@ -97,7 +98,7 @@ class Discriminator(nn.Module):
                                                   ), #128 * 57 * 57
                                         #nn.BatchNorm2d(128),
                                         nn.LeakyReLU(),
-                                        #nn.Dropout(0.5),
+                                        nn.Dropout(0.7),
                                         nn.Conv2d(128,
                                                   256,
                                                   kernel_size=4,
@@ -105,7 +106,7 @@ class Discriminator(nn.Module):
                                                   ), #256 * 54 * 54
                                         #nn.BatchNorm2d(256),
                                         nn.LeakyReLU(),
-                                        #nn.Dropout(0.5),
+                                        nn.Dropout(0.7),
                                         )
         self.to_out = nn.Sequential(nn.Linear(256*54*54, 1),
                                     nn.Sigmoid(),
@@ -158,7 +159,7 @@ def main(args):
     train_discriminator = Discriminator().cuda()
     
     optimizer_g = torch.optim.Adam(train_generator.parameters(), **ADAMPARAM)
-    optimizer_d = torch.optim.Adam(train_discriminator.parameters(), **ADAMPARAM)
+    optimizer_d = torch.optim.Adam(train_discriminator.parameters(), **ADAMPARAM2)
     
     loss_func_g = criterion_g
     loss_func_d = criterion_d
@@ -227,7 +228,7 @@ def main(args):
             torch.save(optimizer_g, args.model_directory + args.model_name + '_epoch_' + str(e+1) + '_generator.optim')
             torch.save(train_discriminator, args.model_directory + args.model_name + '_epoch_' + str(e+1) + '_discriminator.pkl')
             torch.save(optimizer_d, args.model_directory + args.model_name + '_epoch_' + str(e+1) + '_discriminator.optim')
-            print('batch: ', b_num, '/', total_batch, ' Discriminator Loss: ', epoch_dloss-old_dloss, ' Generator Loss: ', epoch_gloss-old_gloss, end='\r')
+            print('batch: ', b_num, '/', total_batch, ' Discriminator Loss: ', (epoch_dloss-old_dloss)/args.k, ' Generator Loss: ', epoch_gloss-old_gloss, end='\r')
             old_dloss, old_gloss = epoch_dloss, epoch_gloss
         
         dloss_record.append(epoch_dloss)
