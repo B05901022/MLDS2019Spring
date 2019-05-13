@@ -122,7 +122,7 @@ def criterion_d(generated, data, samplesize):
     (batch, channel, height, weight)
     """
     
-    return (torch.mean((torch.ones((samplesize,1)).cuda()-generated) ** 2) + torch.mean((data) ** 2)) * -0.5
+    return (torch.mean((torch.ones((samplesize,1)).cuda()-generated) ** 2) + torch.mean((data) ** 2)) * 0.5
     #return (torch.sum(generated) - torch.sum(data)) / samplesize
     
 def criterion_g(generated, samplesize):
@@ -227,7 +227,7 @@ def main(args):
             torch.save(optimizer_g, args.model_directory + args.model_name + '_epoch_' + str(e+1) + '_generator.optim')
             torch.save(train_discriminator, args.model_directory + args.model_name + '_epoch_' + str(e+1) + '_discriminator.pkl')
             torch.save(optimizer_d, args.model_directory + args.model_name + '_epoch_' + str(e+1) + '_discriminator.optim')
-            print('batch: ', b_num, '/', total_batch, ' Discriminator Loss: ', -1 * (epoch_dloss-old_dloss)/args.k, ' Generator Loss: ', epoch_gloss-old_gloss, end='\r')
+            print('batch: ', b_num, '/', total_batch, ' Discriminator Loss: ', (epoch_dloss-old_dloss)/args.k, ' Generator Loss: ', epoch_gloss-old_gloss, end='\r')
             old_dloss, old_gloss = epoch_dloss, epoch_gloss
         
         dloss_record.append(epoch_dloss)
