@@ -122,7 +122,7 @@ def criterion_d(generated, data, samplesize):
     (batch, channel, height, weight)
     """
     
-    return (torch.mean((torch.ones((samplesize,1)).cuda()-generated) ** 2) + torch.mean((data) ** 2)) * 0.5
+    return (torch.mean((1-data) ** 2) + torch.mean((generated) ** 2)) * 0.5
     #return (torch.sum(generated) - torch.sum(data)) / samplesize
     
 def criterion_g(generated, samplesize):
@@ -131,7 +131,7 @@ def criterion_g(generated, samplesize):
     (batch, channel, height, weight)
     """
     
-    return torch.mean((torch.ones((samplesize,1)).cuda()-generated) ** 2) * 0.5
+    return torch.mean((1 - generated) ** 2) * 0.5
     
 def main(args):
     
