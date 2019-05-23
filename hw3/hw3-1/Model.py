@@ -58,7 +58,7 @@ class Generator(nn.Module):
                                                            stride=1,
                                                            padding=1,
                                                            ), #3 * 64 * 64
-                                        nn.Tanh(),
+                                        nn.Sigmoid(),
                                         )
     def forward(self, x):
         x = self.to_2d(x)
@@ -144,7 +144,8 @@ def main(args):
     transform = transforms.Compose(
             [transforms.Scale([64,64]),
              transforms.ToTensor(),
-             transforms.Normalize((0.0,0.0,0.0),(1.0,1.0,1.0))])
+             #transforms.Normalize((0.0,0.0,0.0),(1.0,1.0,1.0))
+             ])
     traindata = torchvision.datasets.ImageFolder(root=args.data_directory, transform=transform)
     train_dataloader = Data.DataLoader(traindata, batch_size=BATCHSIZE)
     

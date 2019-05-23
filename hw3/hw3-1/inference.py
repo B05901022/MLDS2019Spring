@@ -142,8 +142,9 @@ def main(args):
         """
         
         r, c = 5, 5
-        generated_waifu = generated_waifu + torch.ones((25,3,64,64)).cuda()
-        generated_waifu = generated_waifu * 255/2
+        #generated_waifu = generated_waifu + torch.ones((25,3,64,64)).cuda()
+        #generated_waifu = generated_waifu * 255/2
+        generated_waifu = generated_waifu * 255
         generated_waifu = generated_waifu.detach().cpu().numpy().astype(np.int32)
         generated_waifu = np.transpose(generated_waifu, [0,2,3,1])
         fig, axs = plt.subplots(r, c)
