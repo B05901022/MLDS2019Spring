@@ -32,12 +32,12 @@ BATCHSIZE = 96
 WGANCLIP  = 0.01
 
 class Generator(nn.Module):
-    def __init__(self, x):
+    def __init__(self):
         super(Generator, self).__init__()
         self.to_2d = nn.Linear(100,256*16*16)
         self.txt_emb = nn.Sequential(nn.Linear(130,256),
                                      nn.ReLU())
-        self.fc = nn.Linear(256*257,4*4*512)
+        self.fc = nn.Linear(256*257,4*4*256)
         self.conv_layers = nn.Sequential(nn.BatchNorm2d(256),
                                          nn.LeakyReLU(),
                                          nn.ConvTranspose2d(256, 
@@ -46,6 +46,7 @@ class Generator(nn.Module):
                                                             stride=2, 
                                                             padding=1,
                                                             ), #128 * 32 * 32
+                                                
                                         nn.BatchNorm2d(128),
                                         nn.LeakyReLU(),
                                         nn.ConvTranspose2d(128,
@@ -62,15 +63,33 @@ class Generator(nn.Module):
                                                            stride=2,
                                                            padding=1,
                                                            ), #3 * 64 * 64               
+                                        nn.BatchNorm2d(32),
+                                        nn.LeakyReLU(),
+                                        nn.ConvTranspose2d(32,16,
+                                                    
+                                                           kernel_size=4,
+                                                           stride=2,
+                                                           padding=1,
+                                                           ), #3 * 64 * 64               
+                                        nn.BatchNorm2d(16),
+                                        nn.LeakyReLU(),
+                                        nn.ConvTranspose2d(16,
+                                                           3,
+                                                           kernel_size=4,
+                                                           stride=2,
+                                                           padding=1,
+                                                           ), #3 * 64 * 64               
                                         nn.Tanh(),#interval[0,1.0]
+                                        
                                         )
         
     def forward(self, x, label):
         x = self.to_2d(x)
         y = self.txt_emb(label)
-        x = torch.cat([x,y])
+        #print(x.shape,y.shape)
+        x = torch.cat([x,y],dim=1)
         x = self.fc(x)
-        x = x.view(-1,4,4,512)
+        x = x.view(-1,256,4,4)
         x = self.conv_layers(x)
         return x
     
@@ -84,57 +103,69 @@ class Discriminator(nn.Module):
     def __init__(self):
         super(Discriminator, self).__init__()
         self.txt_emb = nn.Sequential(nn.Linear(130,256),
-                                     nn.ReLU())
+                                     nn.ReLU(),
+                                    )    
         self.conv_layers1 = nn.Sequential(nn.Conv2d(3,
-                                                   64,
-                                                   kernel_size=4,
+                                                   32,
+                                                   kernel_size=5,
+                                                   stride=2,
                                                    padding=0,
-                                                   ), #32 * 61 * 61
+                                                   ), #32 * 64 * 64
                                         #nn.BatchNorm2d(32),
                                         nn.LeakyReLU(),
                                         nn.Dropout(0.7),
+                                        nn.Conv2d(32,
+                                                  64,
+                                                  stride=2,
+                                                  kernel_size=5,
+                                                  padding=0,
+                                                  ), #64 * 32 * 32
+                                        nn.LeakyReLU(),
+                                        nn.Dropout(0.7),
+                                        #nn.BatchNorm2d(64),
                                         nn.Conv2d(64,
                                                   128,
-                                                  kernel_size=4,
-                                                  padding=1,
-                                                  ), #64 * 60 * 60
+                                                  stride=2,
+                                                  kernel_size=5,
+                                                  padding=0,
+                                                  ), #128 * 16 * 16
                                         #nn.BatchNorm2d(64),
                                         nn.LeakyReLU(),
                                         nn.Dropout(0.7),
                                         nn.Conv2d(128,
                                                   256,
-                                                  kernel_size=4,
+                                                  stride=2,
+                                                  kernel_size=5,
                                                   padding=0,
-                                                  ), #128 * 57 * 57
+                                                  ), #256 * 8 * 8
                                         #nn.BatchNorm2d(128),
                                         nn.LeakyReLU(),
                                         nn.Dropout(0.7),
-                                        nn.Conv2d(256,
-                                                  512,
-                                                  kernel_size=4,
-                                                  padding=0,
-                                                  ), #256 * 54 * 54
-                                        #nn.BatchNorm2d(256),
-                                        nn.LeakyReLU(),
-                                        nn.Dropout(0.7),
+                                        
                                         )
-        self.to_out = nn.Sequential(nn.Linear(256*54*54, 1),
+        self.to_out = nn.Sequential(
+                                    nn.Linear(256*5*10, 1),
                                     nn.Sigmoid()
                                     )
-        self.conv_layers2 = nn.Sequential(nn.Conv2d(512,
-                                                  512,
+        self.conv_layers2 = nn.Sequential(nn.Conv2d(256,
+                                                  256,
                                                   kernel_size=1,
-                                                  strides=(1,1),
+                                                  stride=(1,1),
                                                   )
                                          )
     def forward(self, x, label):
         y = self.txt_emb(label)
-        y = y.view(-1,1,1,256)
-        y = y.repeat([1,4,4,1])
+        y = y.view(-1,256,1,1)
+        y = y.repeat([1,1,5,5])
         x = self.conv_layers1(x)
-        x = torch.cat([x,y])
+        print(x.shape,y.shape,99)
+        x = torch.cat([x,y],dim=2)
+        print(x.shape,101)
         x = self.conv_layers2(x)
+        x = x.view(-1,256*5*10)
+        #print(x.shape,100)
         x = self.to_out(x)
+        #print(x.shape,2)
         return x
 
 def criterion_d(generated, data, samplesize):
@@ -161,6 +192,8 @@ def main(args):
     Data loading and data preprocessing
     ---------------------------------//
     """
+    '''
+
     transform = transforms.Compose(
             [transforms.Scale([64,64]),
              transforms.ToTensor(),
@@ -170,6 +203,13 @@ def main(args):
     train_dataloader = Data.DataLoader(traindata, batch_size=BATCHSIZE)
     
     total_batch = len(traindata) // BATCHSIZE    
+    '''
+    data=torch.Tensor(np.load(args.data))
+    label=torch.Tensor(np.load(args.label))
+    dataset = Data.TensorDataset(data,label)
+    train_dataloader = Data.DataLoader(dataset, batch_size=BATCHSIZE)
+    total_batch=data.shape[0]//BATCHSIZE+1
+    
     """
     //------
     Training
@@ -178,7 +218,11 @@ def main(args):
     
     train_generator = Generator().cuda()
     train_discriminator = Discriminator().cuda()
-    
+    """
+    from torchsummary import summary
+    summary(train_discriminator,[(3,128,128),(130,)])
+    _=input("debug")
+    """
     optimizer_g = torch.optim.Adam(train_generator.parameters(), **ADAMPARAM)
     optimizer_d = torch.optim.Adam(train_discriminator.parameters(), **ADAMPARAM2)
     
@@ -210,12 +254,13 @@ def main(args):
             data_d     = torch.index_select(b_x, 1, sample_tag).cuda()
             """
             for generating_train in range(args.k):
-                data_d     = b_x.cuda()
+                data_d  = b_x.view(-1,3,128,128).cuda()
+                data_label = b_y.cuda()
                 sample_noise = noise_distribution.sample((BATCHSIZE, 100)).squeeze(2).cuda()
                 optimizer_d.zero_grad()
-                generated = train_generator(sample_noise)
-                generated = train_discriminator(generated)
-                data_d    = train_discriminator(data_d)
+                generated = train_generator(sample_noise,data_label)
+                generated = train_discriminator(generated,data_label)
+                data_d    = train_discriminator(data_d,data_label)
                 dloss = loss_func_d(generated=generated, data=data_d, samplesize=BATCHSIZE)
                 dloss.backward()
                 epoch_dloss += dloss.item()
@@ -232,8 +277,8 @@ def main(args):
             
             sample_noise = noise_distribution.sample((BATCHSIZE, 100)).squeeze(2).cuda()
             optimizer_g.zero_grad()
-            generated = train_generator(sample_noise)
-            generated = train_discriminator(generated)
+            generated = train_generator(sample_noise,data_label)
+            generated = train_discriminator(generated,data_label)
             gloss = loss_func_g(generated=generated, samplesize=BATCHSIZE)
             gloss.backward()
             epoch_gloss += gloss.item()
@@ -268,9 +313,10 @@ def main(args):
     
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('--data_directory', '-dd', type=str, default='H:/hw3-1/MLDS_dataset')#AnimeDataset/
-    parser.add_argument('--model_name', '-mn', type=str, default='GAN_1')
-    parser.add_argument('--model_directory', '-md', type=str, default='H:/hw3-1/MLDS_models/hw3-1/')
+    parser.add_argument('--data', '-d', type=str, default='E:/large_image.npy')#AnimeDataset/
+    parser.add_argument('--label', '-l', type=str, default='E:/tag.npy')
+    parser.add_argument('--model_name', '-mn', type=str, default='GAN_3-2')
+    parser.add_argument('--model_directory', '-md', type=str, default='H:/hw3-2/')
     parser.add_argument('--epoch', '-e', type=int, default=50)
     parser.add_argument('--k', '-k', type=int, default=2)
     args = parser.parse_args()
