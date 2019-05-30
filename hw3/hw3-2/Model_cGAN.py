@@ -25,7 +25,7 @@ ConvTranspose2d:
 """
 
 ADAMPARAM = {'lr':0.0002, 'betas':(0.5, 0.999), 'eps':1e-5}
-ADAMPARAM2= {'lr':0.0001, 'betas':(0.5, 0.999), 'eps':1e-5}
+ADAMPARAM2= {'lr':0.0002, 'betas':(0.5, 0.999), 'eps':1e-5}
 SGDPARAM  = {'lr':0.0002, 'momentum':0.9}
 BATCHSIZE = 96
 WGANCLIP  = 0.01
@@ -107,7 +107,7 @@ class Discriminator(nn.Module):
                                                    ), #32 * 30 * 30
                                         nn.BatchNorm2d(32, momentum=0.9),
                                         nn.LeakyReLU(),
-                                        nn.Dropout(0.3),
+                                        nn.Dropout(0.7),
                                         nn.Conv2d(32,
                                                   64,
                                                   stride=2,
@@ -116,7 +116,7 @@ class Discriminator(nn.Module):
                                                   ), #64 * 14 * 14
                                         nn.BatchNorm2d(64, momentum=0.9),
                                         nn.LeakyReLU(),
-                                        nn.Dropout(0.3),
+                                        nn.Dropout(0.7),
                                         nn.Conv2d(64,
                                                   128,
                                                   stride=2,
@@ -125,7 +125,7 @@ class Discriminator(nn.Module):
                                                   ), #128 * 6 * 6
                                         nn.BatchNorm2d(128, momentum=0.9),
                                         nn.LeakyReLU(),
-                                        nn.Dropout(0.3),
+                                        nn.Dropout(0.7),
                                         nn.Conv2d(128,
                                                   256,
                                                   stride=1,
@@ -134,7 +134,7 @@ class Discriminator(nn.Module):
                                                   ), #256 * 4 * 4
                                         nn.BatchNorm2d(256, momentum=0.9),
                                         nn.LeakyReLU(),
-                                        nn.Dropout(0.3),
+                                        nn.Dropout(0.7),
                                         
                                         )
         self.to_out = nn.Sequential(
@@ -145,7 +145,10 @@ class Discriminator(nn.Module):
                                                   512,
                                                   kernel_size=1,
                                                   stride=(1,1),
-                                                  )
+                                                  ),
+                                         nn.BatchNorm2d(512, momentum=0.9),
+                                         nn.LeakyReLU(),
+                                         nn.Dropout(0.7),
                                          )
     def forward(self, x, label):
         y = self.txt_emb(label)
@@ -298,10 +301,10 @@ def main(args):
         torch.save(train_discriminator, args.model_directory + args.model_name + '_epoch_' + str(e+1) + '_discriminator.pkl')
         torch.save(optimizer_d, args.model_directory + args.model_name + '_epoch_' + str(e+1) + '_discriminator.optim')
         
-        dloss_record.append(epoch_dloss)
+        dloss_record.append(epoch_dloss/args.k)
         gloss_record.append(epoch_gloss)
         print()
-        print("Discriminator Loss: ", epoch_dloss)
+        print("Discriminator Loss: ", epoch_dloss/args.k)
         print("Generator Loss: ", epoch_gloss)
     
     dloss_record = np.array(dloss_record)
