@@ -160,7 +160,7 @@ def criterion_d(generated, data, wrong_data):
     (batch, channel, height, weight)
     """
     
-    return torch.mean(torch.log(data)) + torch.mean(torch.log(1-generated)) + torch.mean(torch.log(1-wrong_data))
+    return (torch.mean(torch.log(data)) + torch.mean(torch.log(1-generated)) + torch.mean(torch.log(1-wrong_data)))*-1
     
 def criterion_g(generated):
     
