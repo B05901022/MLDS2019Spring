@@ -158,9 +158,9 @@ class Discriminator(nn.Module):
         y = y.view(-1,256,1,1)
         y = y.repeat([1,1,5,5])
         x = self.conv_layers1(x)
-        print(x.shape,y.shape,99)
+        #print(x.shape,y.shape,99)
         x = torch.cat([x,y],dim=2)
-        print(x.shape,101)
+       # print(x.shape,101)
         x = self.conv_layers2(x)
         x = x.view(-1,256*5*10)
         #print(x.shape,100)
@@ -204,11 +204,13 @@ def main(args):
     
     total_batch = len(traindata) // BATCHSIZE    
     '''
-    data=torch.Tensor(np.load(args.data))
+    data=np.load(args.data)
+    data=np.moveaxis(data,3,1)
+    data=torch.Tensor(data)
     label=torch.Tensor(np.load(args.label))
     dataset = Data.TensorDataset(data,label)
     train_dataloader = Data.DataLoader(dataset, batch_size=BATCHSIZE)
-    total_batch=data.shape[0]//BATCHSIZE+1
+    total_batch=data.shape[0]//BATCHSIZE
     
     """
     //------
@@ -243,7 +245,7 @@ def main(args):
         old_gloss = 0
         
         
-        for b_num, (b_x, b_y) in enumerate(train_dataloader):
+        for b_num, (b_x, b_y) in enumerate(train_dataloader):    
 
             """
             Train D
@@ -254,48 +256,58 @@ def main(args):
             data_d     = torch.index_select(b_x, 1, sample_tag).cuda()
             """
             for generating_train in range(args.k):
-                data_d  = b_x.view(-1,3,128,128).cuda()
+                data_d  = b_x.cuda()
                 data_label = b_y.cuda()
-                sample_noise = noise_distribution.sample((BATCHSIZE, 100)).squeeze(2).cuda()
+                sample_noise = noise_distribution.sample((b_x.shape[0], 100)).squeeze(2).cuda()
                 optimizer_d.zero_grad()
+                # print(1)
+                """
+                if b_num==396:
+                    print (sample_noise.shape,data_label.shape)
+                    c=input("debug")
+                """
                 generated = train_generator(sample_noise,data_label)
+                # print(2)
                 generated = train_discriminator(generated,data_label)
+                #print(3)
                 data_d    = train_discriminator(data_d,data_label)
+                #print(4)
                 dloss = loss_func_d(generated=generated, data=data_d, samplesize=BATCHSIZE)
                 dloss.backward()
                 epoch_dloss += dloss.item()
                 optimizer_d.step()
-                """
-                for param in train_discriminator.parameters():
-                    param = torch.clamp(param, -1* WGANCLIP, WGANCLIP)
-                """
+            """
+            for param in train_discriminator.parameters():
+                param = torch.clamp(param, -1* WGANCLIP, WGANCLIP)
+            """
             ##################################################################################################################
             
             """
             Train G
             """
-            
-            sample_noise = noise_distribution.sample((BATCHSIZE, 100)).squeeze(2).cuda()
+            sample_noise = noise_distribution.sample((b_x.shape[0], 100)).squeeze(2).cuda()
             optimizer_g.zero_grad()
             generated = train_generator(sample_noise,data_label)
             generated = train_discriminator(generated,data_label)
+            #print(5)
             gloss = loss_func_g(generated=generated, samplesize=BATCHSIZE)
             gloss.backward()
             epoch_gloss += gloss.item()
             optimizer_g.step()
-            
+            #print(6)
             ##################################################################################################################
             
             """
             Save Model
             """
             
-            torch.save(train_generator, args.model_directory + args.model_name + '_epoch_' + str(e+1) + '_generator.pkl')
-            torch.save(optimizer_g, args.model_directory + args.model_name + '_epoch_' + str(e+1) + '_generator.optim')
-            torch.save(train_discriminator, args.model_directory + args.model_name + '_epoch_' + str(e+1) + '_discriminator.pkl')
-            torch.save(optimizer_d, args.model_directory + args.model_name + '_epoch_' + str(e+1) + '_discriminator.optim')
+        
             print('batch: ', b_num, '/', total_batch, ' Discriminator Loss: ', (epoch_dloss-old_dloss)/args.k, ' Generator Loss: ', epoch_gloss-old_gloss, end='\r')
             old_dloss, old_gloss = epoch_dloss, epoch_gloss
+        torch.save(train_generator, args.model_directory + args.model_name + '_epoch_' + str(e+1) + '_generator.pkl')
+        torch.save(optimizer_g, args.model_directory + args.model_name + '_epoch_' + str(e+1) + '_generator.optim')
+        torch.save(train_discriminator, args.model_directory + args.model_name + '_epoch_' + str(e+1) + '_discriminator.pkl')
+        torch.save(optimizer_d, args.model_directory + args.model_name + '_epoch_' + str(e+1) + '_discriminator.optim')
         
         dloss_record.append(epoch_dloss)
         gloss_record.append(epoch_gloss)
