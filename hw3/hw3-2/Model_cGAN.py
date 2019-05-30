@@ -38,6 +38,7 @@ class Generator(nn.Module):
         self.fc = nn.Linear(356,4*4*512)
         self.conv_layers = nn.Sequential(nn.BatchNorm2d(512, momentum=0.9),
                                          nn.LeakyReLU(),
+                                         nn.Dropout(0.3),
                                          nn.ConvTranspose2d(512, 
                                                             256, 
                                                             kernel_size=4, 
@@ -47,6 +48,7 @@ class Generator(nn.Module):
                                                 
                                         nn.BatchNorm2d(256, momentum=0.9),
                                         nn.LeakyReLU(),
+                                        nn.Dropout(0.3),
                                         nn.ConvTranspose2d(256,
                                                            128,
                                                            kernel_size=4,
@@ -55,6 +57,7 @@ class Generator(nn.Module):
                                                            ), #64 * 64 * 64
                                         nn.BatchNorm2d(128, momentum=0.9),
                                         nn.LeakyReLU(),
+                                        nn.Dropout(0.3),
                                         nn.ConvTranspose2d(128,
                                                            64,
                                                            kernel_size=4,
@@ -63,13 +66,14 @@ class Generator(nn.Module):
                                                            ), #3 * 64 * 64               
                                         nn.BatchNorm2d(64, momentum=0.9),
                                         nn.LeakyReLU(),
+                                        nn.Dropout(0.3),
                                         nn.ConvTranspose2d(64,
                                                            3,
                                                            kernel_size=4,
                                                            stride=2,
                                                            padding=1,
                                                            ), #3 * 64 * 64               
-                                        nn.BatchNorm2d(3),
+                                        nn.BatchNorm2d(3, momentum=0.9),
                                         nn.LeakyReLU(),
                                         nn.Tanh(),#interval[0,1.0]
                                         
@@ -103,7 +107,7 @@ class Discriminator(nn.Module):
                                                    ), #32 * 30 * 30
                                         nn.BatchNorm2d(32, momentum=0.9),
                                         nn.LeakyReLU(),
-                                        nn.Dropout(0.7),
+                                        nn.Dropout(0.3),
                                         nn.Conv2d(32,
                                                   64,
                                                   stride=2,
@@ -112,7 +116,7 @@ class Discriminator(nn.Module):
                                                   ), #64 * 14 * 14
                                         nn.BatchNorm2d(64, momentum=0.9),
                                         nn.LeakyReLU(),
-                                        nn.Dropout(0.7),
+                                        nn.Dropout(0.3),
                                         nn.Conv2d(64,
                                                   128,
                                                   stride=2,
@@ -121,7 +125,7 @@ class Discriminator(nn.Module):
                                                   ), #128 * 6 * 6
                                         nn.BatchNorm2d(128, momentum=0.9),
                                         nn.LeakyReLU(),
-                                        nn.Dropout(0.7),
+                                        nn.Dropout(0.3),
                                         nn.Conv2d(128,
                                                   256,
                                                   stride=1,
@@ -130,7 +134,7 @@ class Discriminator(nn.Module):
                                                   ), #256 * 4 * 4
                                         nn.BatchNorm2d(256, momentum=0.9),
                                         nn.LeakyReLU(),
-                                        nn.Dropout(0.7),
+                                        nn.Dropout(0.3),
                                         
                                         )
         self.to_out = nn.Sequential(
@@ -230,7 +234,7 @@ def main(args):
             
             b_x_new = []
             for i in range(len(b_x)):
-                b_x_new.append(transform(b_x[i]) / 255.0)                
+                b_x_new.append(transform(b_x[i]) - 127.5 / 127.5)                
             b_x = torch.stack(b_x_new)
 
             """
@@ -243,7 +247,7 @@ def main(args):
             """
             for generating_train in range(args.k):
                 # Data prepare
-                random_picker = torch.randperm(BATCHSIZE)
+                random_picker = torch.randperm(b_x.shape[0])
                 data_d  = b_x.cuda()
                 data_wrong = b_x[random_picker].cuda()
                 data_label = b_y.cuda()
@@ -283,8 +287,11 @@ def main(args):
             """
             Save Model
             """
-        
-            print('batch: ', b_num, '/', total_batch, ' Discriminator Loss: ', (epoch_dloss-old_dloss)/args.k, ' Generator Loss: ', epoch_gloss-old_gloss, end='\r')
+            
+            train_iteration = int(b_num/total_batch*20)
+            train_toy = '[' + '='*train_iteration + '>' + '-'*(19-train_iteration) + '] '
+            if train_iteration == 20:train_toy = '['+'='*20+']'
+            print(train_toy + 'batch: ', b_num, '/', total_batch, ' Discriminator Loss: ', (epoch_dloss-old_dloss)/args.k, ' Generator Loss: ', epoch_gloss-old_gloss, end='\r')
             old_dloss, old_gloss = epoch_dloss, epoch_gloss
         torch.save(train_generator, args.model_directory + args.model_name + '_epoch_' + str(e+1) + '_generator.pkl')
         torch.save(optimizer_g, args.model_directory + args.model_name + '_epoch_' + str(e+1) + '_generator.optim')
