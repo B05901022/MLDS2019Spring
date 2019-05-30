@@ -178,6 +178,11 @@ def main(args):
     Data loading and data preprocessing
     ---------------------------------//
     """
+    transform = transforms.Compose(
+            [transforms.ToPILImage(),
+             transforms.Resize((64,64)),
+             transforms.ToTensor(),
+             ])
     print("Loading data...")
     data=np.load(args.data)
     data=np.moveaxis(data,3,1)
@@ -221,7 +226,12 @@ def main(args):
         old_gloss = 0
         
         
-        for b_num, (b_x, b_y) in enumerate(train_dataloader):    
+        for b_num, (b_x, b_y) in enumerate(train_dataloader):
+            
+            b_x_new = []
+            for i in range(len(b_x)):
+                b_x_new.append(transform(b_x[i]) / 255.0)                
+            b_x = torch.stack(b_x_new)
 
             """
             Train D
@@ -273,7 +283,6 @@ def main(args):
             """
             Save Model
             """
-            
         
             print('batch: ', b_num, '/', total_batch, ' Discriminator Loss: ', (epoch_dloss-old_dloss)/args.k, ' Generator Loss: ', epoch_gloss-old_gloss, end='\r')
             old_dloss, old_gloss = epoch_dloss, epoch_gloss
