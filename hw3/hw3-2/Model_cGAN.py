@@ -232,10 +232,9 @@ def main(args):
             """
             for generating_train in range(args.k):
                 # Data prepare
-                random_picker = list(range(BATCHSIZE))
-                random.shuffle(random_picker)
+                random_picker = torch.randperm(BATCHSIZE)
                 data_d  = b_x.cuda()
-                data_wrong = torch.Tensor([b_x[random_index] for random_index in random_picker]).cuda()
+                data_wrong = b_x[random_picker].cuda()
                 data_label = b_y.cuda()
                 sample_noise = noise_distribution.sample((b_x.shape[0], 100)).squeeze(2).cuda()
                 
