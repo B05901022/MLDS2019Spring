@@ -1,8 +1,9 @@
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Thu May 30 19:43:01 2019
+Created on Fri May 31 02:34:14 2019
 
-@author: Austin Hsu
+@author: austinhsu
 """
 
 import os
@@ -17,18 +18,9 @@ import torch.utils.data as Data
 import numpy as np
 from tqdm import tqdm
 import random
+import matplotlib.pyplot as plt
 
-"""
-ConvTranspose2d:
-    output_height:
-        (input_height - 1) * stride - 2*padding + kernel_size + output_padding
-"""
-
-ADAMPARAM = {'lr':0.0002, 'betas':(0.5, 0.999), 'eps':1e-5}
-ADAMPARAM2= {'lr':0.0002, 'betas':(0.5, 0.999), 'eps':1e-5}
-SGDPARAM  = {'lr':0.0002, 'momentum':0.9}
-BATCHSIZE = 256
-WGANCLIP  = 0.01
+import const
 
 class Generator(nn.Module):
     def __init__(self):
@@ -161,167 +153,51 @@ class Discriminator(nn.Module):
         x = self.to_out(x)
         return x
     
-def criterion_d(generated, data, wrong_data):
-    
-    """
-    (batch, channel, height, weight)
-    """
-    
-    return (torch.mean(torch.log(data)) + torch.mean(torch.log(1-generated)) + torch.mean(torch.log(1-wrong_data)))*-1
-    
-def criterion_g(generated):
-    
-    """
-    (batch, channel, height, weight)
-    """
-    
-    return torch.mean(torch.log(generated)) * -1
-    #return torch.mean((1 - generated) ** 2) * 0.5
-    
 def main(args):
     
-    """
-    //---------------------------------
-    Data loading and data preprocessing
-    ---------------------------------//
-    """
-    transform = transforms.Compose(
-            [transforms.ToPILImage(),
-             transforms.Resize((64,64)),
-             transforms.ToTensor(),
-             ])
-    print("Loading data...")
-    data=np.load(args.data)
-    data=np.moveaxis(data,3,1)
-    data=torch.Tensor(data)
-    label=torch.Tensor(np.load(args.label))
-    dataset = Data.TensorDataset(data,label)
-    train_dataloader = Data.DataLoader(dataset, batch_size=BATCHSIZE)
-    total_batch=data.shape[0]//BATCHSIZE
-    print("Loading complete.")
-    
-    """
-    //------
-    Training
-    ------//
-    """
-    
-    train_generator = Generator().cuda()
-    train_discriminator = Discriminator().cuda()
-    """
-    from torchsummary import summary
-    summary(train_discriminator,[(3,128,128),(130,)])
-    _=input("debug")
-    """
-    optimizer_g = torch.optim.Adam(train_generator.parameters(), **ADAMPARAM)
-    optimizer_d = torch.optim.Adam(train_discriminator.parameters(), **ADAMPARAM2)
-    
-    loss_func_g = criterion_g
-    loss_func_d = criterion_d
+    tag_dict = const.tag_to_idx
+    tags_wanted = ['pink hair black eyes', 
+                   'black hair purple eyes',
+                   'red hair red eyes',
+                   'aqua hair green eyes',
+                   'blonde hair orange eyes',
+                   ]
+    tags_wanted = [tag_dict[i] for i in tags_wanted]
+    tags = torch.zeros(25,130)
+    for i in range(len(tags_wanted)):
+        tags[5*i:6*i-1,tags_wanted[i]] = 1
+    tags = tags.cuda()
     
     noise_distribution = torch.distributions.Normal(torch.Tensor([0.0]), torch.Tensor([1.0]))
-    dloss_record = []
-    gloss_record = []
+    sample_noise = noise_distribution.sample((5, 100)).squeeze(2)
+    sample_noise = torch.stack((sample_noise,sample_noise,sample_noise,sample_noise,sample_noise), dim=0).view(-1,100).cuda()
+    r, c = 5, 5
     
-    print('Training starts...')
-    
-    for e in range(args.epoch):
-        print('Epoch ', e+1)
-        epoch_dloss = 0
-        epoch_gloss = 0
-        old_dloss = 0
-        old_gloss = 0
-        
-        
-        for b_num, (b_x, b_y) in enumerate(train_dataloader):
-            
-            b_x_new = []
-            for i in range(len(b_x)):
-                b_x_new.append((transform(b_x[i]) - 127.5) / 127.5)                
-            b_x = torch.stack(b_x_new)
+    for e in tqdm(range(args.epoch)):
+        test_generator = torch.load(args.model_directory+args.model_name+'_epoch_'+str(e+1)+'_generator.pkl').eval().cuda()        
+        generated_waifu = test_generator(sample_noise, tags)
+        generated_waifu = generated_waifu * 127.5 + 127.5
+        generated_waifu = generated_waifu.detach().cpu().numpy().astype(np.int32)
+        generated_waifu = np.transpose(generated_waifu, [0,2,3,1])
+        fig, axs = plt.subplots(r, c)
+        cnt = 0
+        for i in range(r):
+            for j in range(c):
+                axs[i,j].imshow(generated_waifu[cnt, :,:,:])
+                axs[i,j].axis('off')
+                cnt += 1
+        fig.savefig("./generated/" + args.model_name + '_' + str(e+1) + ".png")
+        plt.close()
 
-            """
-            Train D
-            """
-            
-            """
-            sample_tag = torch.from_numpy(np.random.choice(BATCHSIZE, BATCHSIZE//10, replace=False))
-            data_d     = torch.index_select(b_x, 1, sample_tag).cuda()
-            """
-            for generating_train in range(args.k):
-                # Data prepare
-                random_picker = torch.randperm(b_x.shape[0])
-                data_d  = b_x.cuda()
-                data_wrong = b_x[random_picker].cuda()
-                data_label = b_y.cuda()
-                sample_noise = noise_distribution.sample((b_x.shape[0], 100)).squeeze(2).cuda()
-                
-                # Loss calculation
-                optimizer_d.zero_grad()
-                generated = train_generator(sample_noise,data_label)
-                generated = train_discriminator(generated,data_label)
-                data_d    = train_discriminator(data_d,data_label)
-                data_wrong= train_discriminator(data_wrong, data_label)
-                dloss = loss_func_d(generated=generated, data=data_d, wrong_data=data_wrong)
-                dloss.backward()
-                epoch_dloss += dloss.item()
-                optimizer_d.step()
-            """
-            for param in train_discriminator.parameters():
-                param = torch.clamp(param, -1* WGANCLIP, WGANCLIP)
-            """
-            ##################################################################################################################
-            
-            """
-            Train G
-            """
-            sample_noise = noise_distribution.sample((b_x.shape[0], 100)).squeeze(2).cuda()
-            optimizer_g.zero_grad()
-            generated = train_generator(sample_noise,data_label)
-            generated = train_discriminator(generated,data_label)
-            #print(5)
-            gloss = loss_func_g(generated=generated)
-            gloss.backward()
-            epoch_gloss += gloss.item()
-            optimizer_g.step()
-            #print(6)
-            ##################################################################################################################
-            
-            """
-            Save Model
-            """
-            
-            train_iteration = int(b_num/total_batch*20)
-            train_toy = '[' + '='*train_iteration + '>' + '-'*(19-train_iteration) + '] '
-            if train_iteration == 20:train_toy = '['+'='*20+']'
-            print(train_toy + 'batch: ', b_num, '/', total_batch, ' Discriminator Loss: ', (epoch_dloss-old_dloss)/args.k, ' Generator Loss: ', epoch_gloss-old_gloss, end='\r')
-            old_dloss, old_gloss = epoch_dloss, epoch_gloss
-        torch.save(train_generator, args.model_directory + args.model_name + '_epoch_' + str(e+1) + '_generator.pkl')
-        torch.save(optimizer_g, args.model_directory + args.model_name + '_epoch_' + str(e+1) + '_generator.optim')
-        torch.save(train_discriminator, args.model_directory + args.model_name + '_epoch_' + str(e+1) + '_discriminator.pkl')
-        torch.save(optimizer_d, args.model_directory + args.model_name + '_epoch_' + str(e+1) + '_discriminator.optim')
         
-        dloss_record.append(epoch_dloss/args.k)
-        gloss_record.append(epoch_gloss)
-        print()
-        print("Discriminator Loss: ", epoch_dloss/args.k)
-        print("Generator Loss: ", epoch_gloss)
+    return 
     
-    dloss_record = np.array(dloss_record)
-    gloss_record = np.array(gloss_record)
-    np.save("./loss_record/" + args.model_name + "dloss", dloss_record)
-    np.save("./loss_record/" + args.model_name + "gloss", gloss_record)
-    print('Training finished.')
     
-    return
-    
-if __name__ == "__main__":
+if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--data', '-d', type=str, default='../../../MLDS_dataset/hw3-2/large_image.npy')#AnimeDataset/
-    parser.add_argument('--label', '-l', type=str, default='../../../MLDS_dataset/hw3-2/tag.npy')
-    parser.add_argument('--model_name', '-mn', type=str, default='cGAN_3-2')
+    parser.add_argument('--model_name', '-mn', type=str, default='CGAN_1')
     parser.add_argument('--model_directory', '-md', type=str, default='../../../MLDS_models/hw3-2/')
     parser.add_argument('--epoch', '-e', type=int, default=50)
     parser.add_argument('--k', '-k', type=int, default=2)
     args = parser.parse_args()
-    main(args)         
+    main(args)   
