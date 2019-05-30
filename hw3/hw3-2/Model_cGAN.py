@@ -148,7 +148,7 @@ class Discriminator(nn.Module):
         y = y.view(-1,256,1,1)
         y = y.repeat([1,1,5,5])
         x = self.conv_layers1(x)
-        x = torch.cat([x,y],dim=2)
+        x = torch.cat([x,y],dim=1)
         x = self.conv_layers2(x)
         x = x.view(-1,256*5*10)
         x = self.to_out(x)
@@ -297,10 +297,10 @@ def main(args):
     
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('--data', '-d', type=str, default='E:/large_image.npy')#AnimeDataset/
-    parser.add_argument('--label', '-l', type=str, default='E:/tag.npy')
-    parser.add_argument('--model_name', '-mn', type=str, default='GAN_3-2')
-    parser.add_argument('--model_directory', '-md', type=str, default='H:/hw3-2/')
+    parser.add_argument('--data', '-d', type=str, default='../../../MLDS_dataset/hw3-2/large_image.npy')#AnimeDataset/
+    parser.add_argument('--label', '-l', type=str, default='../../../MLDS_dataset/hw3-2/tag.npy')
+    parser.add_argument('--model_name', '-mn', type=str, default='cGAN_3-2')
+    parser.add_argument('--model_directory', '-md', type=str, default='../../../MLDS_models/hw3-2/')
     parser.add_argument('--epoch', '-e', type=int, default=50)
     parser.add_argument('--k', '-k', type=int, default=2)
     args = parser.parse_args()
