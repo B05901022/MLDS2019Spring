@@ -100,7 +100,7 @@ class Discriminator(nn.Module):
                                                    kernel_size=5,
                                                    stride=2,
                                                    padding=0,
-                                                   ), #32 * 64 * 64
+                                                   ), #32 * 30 * 30
                                         nn.BatchNorm2d(32, momentum=0.9),
                                         nn.LeakyReLU(),
                                         nn.Dropout(0.7),
@@ -108,8 +108,8 @@ class Discriminator(nn.Module):
                                                   64,
                                                   stride=2,
                                                   kernel_size=5,
-                                                  padding=0,
-                                                  ), #64 * 32 * 32
+                                                  padding=1,
+                                                  ), #64 * 14 * 14
                                         nn.BatchNorm2d(64, momentum=0.9),
                                         nn.LeakyReLU(),
                                         nn.Dropout(0.7),
@@ -117,28 +117,28 @@ class Discriminator(nn.Module):
                                                   128,
                                                   stride=2,
                                                   kernel_size=5,
-                                                  padding=0,
-                                                  ), #128 * 16 * 16
+                                                  padding=1,
+                                                  ), #128 * 6 * 6
                                         nn.BatchNorm2d(128, momentum=0.9),
                                         nn.LeakyReLU(),
                                         nn.Dropout(0.7),
                                         nn.Conv2d(128,
                                                   256,
-                                                  stride=2,
+                                                  stride=1,
                                                   kernel_size=5,
-                                                  padding=0,
-                                                  ), #256 * 8 * 8
+                                                  padding=1,
+                                                  ), #256 * 4 * 4
                                         nn.BatchNorm2d(256, momentum=0.9),
                                         nn.LeakyReLU(),
                                         nn.Dropout(0.7),
                                         
                                         )
         self.to_out = nn.Sequential(
-                                    nn.Linear(256*5*10, 1),
+                                    nn.Linear(512*4*4, 1),
                                     nn.Sigmoid()
                                     )
-        self.conv_layers2 = nn.Sequential(nn.Conv2d(256,
-                                                  256,
+        self.conv_layers2 = nn.Sequential(nn.Conv2d(512,
+                                                  512,
                                                   kernel_size=1,
                                                   stride=(1,1),
                                                   )
@@ -146,11 +146,11 @@ class Discriminator(nn.Module):
     def forward(self, x, label):
         y = self.txt_emb(label)
         y = y.view(-1,256,1,1)
-        y = y.repeat([1,1,5,5])
+        y = y.repeat([1,1,4,4])
         x = self.conv_layers1(x)
         x = torch.cat([x,y],dim=1)
         x = self.conv_layers2(x)
-        x = x.view(-1,256*5*10)
+        x = x.view(-1,512*4*4)
         x = self.to_out(x)
         return x
     
@@ -178,7 +178,7 @@ def main(args):
     Data loading and data preprocessing
     ---------------------------------//
     """
-
+    print("Loading data...")
     data=np.load(args.data)
     data=np.moveaxis(data,3,1)
     data=torch.Tensor(data)
@@ -186,6 +186,7 @@ def main(args):
     dataset = Data.TensorDataset(data,label)
     train_dataloader = Data.DataLoader(dataset, batch_size=BATCHSIZE)
     total_batch=data.shape[0]//BATCHSIZE
+    print("Loading complete.")
     
     """
     //------
