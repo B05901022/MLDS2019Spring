@@ -165,21 +165,25 @@ class Discriminator(nn.Module):
         x = self.to_out(x)
         return x
     
-def criterion_d(generated, data, wrong_data):
+def criterion_d(generated, data, wrong_data, gan_type):
     
     """
     (batch, channel, height, weight)
     """
+    if gan_type == 'NS':
+        return (torch.mean(torch.log(data)) + torch.mean(torch.log(1-generated)) + torch.mean(torch.log(1-wrong_data)))*-1
+    if gan_type == 'LS':
+        return (torch.mean((1-data) ** 2) + torch.mean((generated) ** 2) + torch.mean((wrong_data) ** 2)) * 0.5
     
-    return (torch.mean(torch.log(data)) + torch.mean(torch.log(1-generated)) + torch.mean(torch.log(1-wrong_data)))*-1
-    
-def criterion_g(generated):
+def criterion_g(generated, gan_type):
     
     """
     (batch, channel, height, weight)
     """
-    
-    return torch.mean(torch.log(generated)) * -1
+    if gan_type == 'NS':
+        return torch.mean(torch.log(generated)) * -1
+    if gan_type == 'LS':
+        return torch.mean((1 - generated) ** 2) * 0.5
     #return torch.mean((1 - generated) ** 2) * 0.5
     
 def main(args):
@@ -199,6 +203,8 @@ def main(args):
     data=np.moveaxis(data,3,1)
     data=torch.Tensor(data)
     label=torch.Tensor(np.load(args.label))
+    if args.label_smooth:
+        label = label * 0.9 + torch.ones(label.shape) * 0.1/130
     dataset = Data.TensorDataset(data,label)
     train_dataloader = Data.DataLoader(dataset, batch_size=BATCHSIZE, shuffle=True)
     total_batch=data.shape[0]//BATCHSIZE
@@ -269,7 +275,7 @@ def main(args):
                 generated = train_discriminator(generated,data_label)
                 data_d    = train_discriminator(data_d,data_label)
                 data_wrong= train_discriminator(data_wrong, data_wrong_label)
-                dloss = loss_func_d(generated=generated, data=data_d, wrong_data=data_wrong)
+                dloss = loss_func_d(generated=generated, data=data_d, wrong_data=data_wrong, gan_type=args.gan_type)
                 dloss.backward()
                 epoch_dloss += dloss.item()
                 optimizer_d.step()
@@ -287,7 +293,7 @@ def main(args):
             generated = train_generator(sample_noise,data_label)
             generated = train_discriminator(generated,data_label)
             #print(5)
-            gloss = loss_func_g(generated=generated)
+            gloss = loss_func_g(generated=generated,gan_type=args.gan_type)
             gloss.backward()
             epoch_gloss += gloss.item()
             optimizer_g.step()
@@ -303,10 +309,10 @@ def main(args):
             if train_iteration == 20:train_toy = '['+'='*20+']'
             print(train_toy + 'batch: ', b_num, '/', total_batch, ' Discriminator Loss: ', (epoch_dloss-old_dloss)/args.k, ' Generator Loss: ', epoch_gloss-old_gloss, end='\r')
             old_dloss, old_gloss = epoch_dloss, epoch_gloss
-        torch.save(train_generator, args.model_directory + args.model_name + '_epoch_' + str(e+1) + '_generator.pkl')
-        torch.save(optimizer_g, args.model_directory + args.model_name + '_epoch_' + str(e+1) + '_generator.optim')
-        torch.save(train_discriminator, args.model_directory + args.model_name + '_epoch_' + str(e+1) + '_discriminator.pkl')
-        torch.save(optimizer_d, args.model_directory + args.model_name + '_epoch_' + str(e+1) + '_discriminator.optim')
+        torch.save(train_generator, args.model_directory + args.model_name + '_' + args.gan_type + '_LABELSMOOTH_' + str(args.label_smooth) + '_epoch_' + str(e+1) + '_generator.pkl')
+        torch.save(optimizer_g, args.model_directory + args.model_name + '_' + args.gan_type + '_LABELSMOOTH_' + str(args.label_smooth) + '_epoch_' + str(e+1) + '_generator.optim')
+        torch.save(train_discriminator, args.model_directory + args.model_name + '_' + args.gan_type + '_LABELSMOOTH_' + str(args.label_smooth) + '_epoch_' + str(e+1) + '_discriminator.pkl')
+        torch.save(optimizer_d, args.model_directory + args.model_name + '_' + args.gan_type + '_LABELSMOOTH_' + str(args.label_smooth) + '_epoch_' + str(e+1) + '_discriminator.optim')
         
         dloss_record.append(epoch_dloss/args.k)
         gloss_record.append(epoch_gloss)
@@ -316,8 +322,8 @@ def main(args):
     
     dloss_record = np.array(dloss_record)
     gloss_record = np.array(gloss_record)
-    np.save("./loss_record/" + args.model_name + "dloss", dloss_record)
-    np.save("./loss_record/" + args.model_name + "gloss", gloss_record)
+    np.save("./loss_record/" + args.model_name + '_' + args.gan_type + '_LABELSMOOTH_' + str(args.label_smooth) + "dloss", dloss_record)
+    np.save("./loss_record/" + args.model_name + '_' + args.gan_type + '_LABELSMOOTH_' + str(args.label_smooth) + "gloss", gloss_record)
     print('Training finished.')
     
     return
@@ -328,6 +334,8 @@ if __name__ == "__main__":
     parser.add_argument('--label', '-l', type=str, default='../../../MLDS_dataset/hw3-2/tag.npy')
     parser.add_argument('--model_name', '-mn', type=str, default='cGAN_3-2')
     parser.add_argument('--model_directory', '-md', type=str, default='../../../MLDS_models/hw3-2/')
+    parser.add_argument('--gan_type', '-gt', type=str, default='NS')
+    parser.add_argument('--label_smooth', '-ls', type=bool, default=False)
     parser.add_argument('--epoch', '-e', type=int, default=50)
     parser.add_argument('--k', '-k', type=int, default=2)
     args = parser.parse_args()
