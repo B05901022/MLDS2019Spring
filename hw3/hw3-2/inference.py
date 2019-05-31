@@ -26,11 +26,16 @@ class Generator(nn.Module):
     def __init__(self):
         super(Generator, self).__init__()
         self.txt_emb = nn.Sequential(nn.Linear(130,256),
-                                     nn.ReLU())
-        self.fc = nn.Linear(356,4*4*512)
+                                     nn.BatchNorm1d(256, momentum=0.9),
+                                     nn.LeakyReLU(),
+                                     )
+        self.fc = nn.Sequential(nn.Linear(356,4*4*512),
+                                nn.BatchNorm1d(4*4*512, momentum=0.9),
+                                nn.LeakyReLU(),
+                                )
         self.conv_layers = nn.Sequential(nn.BatchNorm2d(512, momentum=0.9),
                                          nn.LeakyReLU(),
-                                         nn.Dropout(0.2),
+                                         #nn.Dropout(0.2),
                                          nn.ConvTranspose2d(512, 
                                                             256, 
                                                             kernel_size=4, 
@@ -40,7 +45,7 @@ class Generator(nn.Module):
                                                 
                                         nn.BatchNorm2d(256, momentum=0.9),
                                         nn.LeakyReLU(),
-                                        nn.Dropout(0.2),
+                                        #nn.Dropout(0.2),
                                         nn.ConvTranspose2d(256,
                                                            128,
                                                            kernel_size=4,
@@ -49,7 +54,7 @@ class Generator(nn.Module):
                                                            ), #64 * 64 * 64
                                         nn.BatchNorm2d(128, momentum=0.9),
                                         nn.LeakyReLU(),
-                                        nn.Dropout(0.1),
+                                        #nn.Dropout(0.1),
                                         nn.ConvTranspose2d(128,
                                                            64,
                                                            kernel_size=4,
@@ -58,7 +63,7 @@ class Generator(nn.Module):
                                                            ), #3 * 64 * 64               
                                         nn.BatchNorm2d(64, momentum=0.9),
                                         nn.LeakyReLU(),
-                                        nn.Dropout(0.1),
+                                        #nn.Dropout(0.1),
                                         nn.ConvTranspose2d(64,
                                                            3,
                                                            kernel_size=4,
@@ -66,9 +71,8 @@ class Generator(nn.Module):
                                                            padding=1,
                                                            ), #3 * 64 * 64               
                                         nn.BatchNorm2d(3, momentum=0.9),
-                                        nn.LeakyReLU(),
-                                        nn.Tanh(),#interval[0,1.0]
-                                        
+                                        #nn.LeakyReLU(),
+                                        nn.Tanh(),                                        
                                         )
         
     def forward(self, x, label):
@@ -89,8 +93,7 @@ class Discriminator(nn.Module):
     def __init__(self):
         super(Discriminator, self).__init__()
         self.txt_emb = nn.Sequential(nn.Linear(130,256),
-                                     nn.ReLU(),
-                                    )    
+                                     )  
         self.conv_layers1 = nn.Sequential(nn.Conv2d(3,
                                                    32,
                                                    kernel_size=5,
@@ -117,7 +120,7 @@ class Discriminator(nn.Module):
                                                   ), #128 * 6 * 6
                                         nn.BatchNorm2d(128, momentum=0.9),
                                         nn.LeakyReLU(),
-                                        nn.Dropout(0.7),
+                                        nn.Dropout(0.8),
                                         nn.Conv2d(128,
                                                   256,
                                                   stride=1,
@@ -126,7 +129,7 @@ class Discriminator(nn.Module):
                                                   ), #256 * 4 * 4
                                         nn.BatchNorm2d(256, momentum=0.9),
                                         nn.LeakyReLU(),
-                                        nn.Dropout(0.7),
+                                        nn.Dropout(0.8),
                                         
                                         )
         self.to_out = nn.Sequential(
@@ -138,9 +141,9 @@ class Discriminator(nn.Module):
                                                   kernel_size=1,
                                                   stride=(1,1),
                                                   ),
-                                         nn.BatchNorm2d(512, momentum=0.9),
+                                         #nn.BatchNorm2d(512, momentum=0.9),
                                          nn.LeakyReLU(),
-                                         nn.Dropout(0.7),
+                                         #nn.Dropout(0.7),
                                          )
     def forward(self, x, label):
         y = self.txt_emb(label)
@@ -171,6 +174,7 @@ def main(args):
     noise_distribution = torch.distributions.Normal(torch.Tensor([0.0]), torch.Tensor([1.0]))
     sample_noise = noise_distribution.sample((5, 100)).squeeze(2)
     sample_noise = torch.stack((sample_noise,sample_noise,sample_noise,sample_noise,sample_noise), dim=0).view(-1,100).cuda()
+
     r, c = 5, 5
     
     for e in tqdm(range(args.epoch)):
@@ -195,9 +199,9 @@ def main(args):
     
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--model_name', '-mn', type=str, default='CGAN_1')
+    parser.add_argument('--model_name', '-mn', type=str, default='CGAN_2')
     parser.add_argument('--model_directory', '-md', type=str, default='../../../MLDS_models/hw3-2/')
     parser.add_argument('--epoch', '-e', type=int, default=50)
-    parser.add_argument('--k', '-k', type=int, default=2)
+    #parser.add_argument('--k', '-k', type=int, default=2)
     args = parser.parse_args()
     main(args)   

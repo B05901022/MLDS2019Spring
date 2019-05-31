@@ -24,21 +24,26 @@ ConvTranspose2d:
         (input_height - 1) * stride - 2*padding + kernel_size + output_padding
 """
 
-ADAMPARAM = {'lr':0.0002, 'betas':(0.5, 0.999), 'eps':1e-5}
-ADAMPARAM2= {'lr':0.0002, 'betas':(0.5, 0.999), 'eps':1e-5}
+ADAMPARAM_G = {'lr':0.0002, 'betas':(0.5, 0.999), 'eps':1e-5}
+ADAMPARAM_D = {'lr':0.0001, 'betas':(0.5, 0.999), 'eps':1e-5}
 SGDPARAM  = {'lr':0.0002, 'momentum':0.9}
-BATCHSIZE = 256
+BATCHSIZE = 512
 WGANCLIP  = 0.01
 
 class Generator(nn.Module):
     def __init__(self):
         super(Generator, self).__init__()
         self.txt_emb = nn.Sequential(nn.Linear(130,256),
-                                     nn.ReLU())
-        self.fc = nn.Linear(356,4*4*512)
+                                     nn.BatchNorm1d(256, momentum=0.9),
+                                     nn.LeakyReLU(),
+                                     )
+        self.fc = nn.Sequential(nn.Linear(356,4*4*512),
+                                nn.BatchNorm1d(4*4*512, momentum=0.9),
+                                nn.LeakyReLU(),
+                                )
         self.conv_layers = nn.Sequential(nn.BatchNorm2d(512, momentum=0.9),
                                          nn.LeakyReLU(),
-                                         nn.Dropout(0.2),
+                                         #nn.Dropout(0.2),
                                          nn.ConvTranspose2d(512, 
                                                             256, 
                                                             kernel_size=4, 
@@ -48,7 +53,7 @@ class Generator(nn.Module):
                                                 
                                         nn.BatchNorm2d(256, momentum=0.9),
                                         nn.LeakyReLU(),
-                                        nn.Dropout(0.2),
+                                        #nn.Dropout(0.2),
                                         nn.ConvTranspose2d(256,
                                                            128,
                                                            kernel_size=4,
@@ -57,7 +62,7 @@ class Generator(nn.Module):
                                                            ), #64 * 64 * 64
                                         nn.BatchNorm2d(128, momentum=0.9),
                                         nn.LeakyReLU(),
-                                        nn.Dropout(0.1),
+                                        #nn.Dropout(0.1),
                                         nn.ConvTranspose2d(128,
                                                            64,
                                                            kernel_size=4,
@@ -66,7 +71,7 @@ class Generator(nn.Module):
                                                            ), #3 * 64 * 64               
                                         nn.BatchNorm2d(64, momentum=0.9),
                                         nn.LeakyReLU(),
-                                        nn.Dropout(0.1),
+                                        #nn.Dropout(0.1),
                                         nn.ConvTranspose2d(64,
                                                            3,
                                                            kernel_size=4,
@@ -74,9 +79,8 @@ class Generator(nn.Module):
                                                            padding=1,
                                                            ), #3 * 64 * 64               
                                         nn.BatchNorm2d(3, momentum=0.9),
-                                        nn.LeakyReLU(),
-                                        nn.Tanh(),#interval[0,1.0]
-                                        
+                                        #nn.LeakyReLU(),
+                                        nn.Tanh(),                                        
                                         )
         
     def forward(self, x, label):
@@ -97,8 +101,7 @@ class Discriminator(nn.Module):
     def __init__(self):
         super(Discriminator, self).__init__()
         self.txt_emb = nn.Sequential(nn.Linear(130,256),
-                                     nn.ReLU(),
-                                    )    
+                                     )  
         self.conv_layers1 = nn.Sequential(nn.Conv2d(3,
                                                    32,
                                                    kernel_size=5,
@@ -125,7 +128,7 @@ class Discriminator(nn.Module):
                                                   ), #128 * 6 * 6
                                         nn.BatchNorm2d(128, momentum=0.9),
                                         nn.LeakyReLU(),
-                                        nn.Dropout(0.7),
+                                        nn.Dropout(0.8),
                                         nn.Conv2d(128,
                                                   256,
                                                   stride=1,
@@ -134,7 +137,7 @@ class Discriminator(nn.Module):
                                                   ), #256 * 4 * 4
                                         nn.BatchNorm2d(256, momentum=0.9),
                                         nn.LeakyReLU(),
-                                        nn.Dropout(0.7),
+                                        nn.Dropout(0.8),
                                         
                                         )
         self.to_out = nn.Sequential(
@@ -146,9 +149,9 @@ class Discriminator(nn.Module):
                                                   kernel_size=1,
                                                   stride=(1,1),
                                                   ),
-                                         nn.BatchNorm2d(512, momentum=0.9),
+                                         #nn.BatchNorm2d(512, momentum=0.9),
                                          nn.LeakyReLU(),
-                                         nn.Dropout(0.7),
+                                         #nn.Dropout(0.7),
                                          )
     def forward(self, x, label):
         y = self.txt_emb(label)
@@ -213,8 +216,8 @@ def main(args):
     summary(train_discriminator,[(3,128,128),(130,)])
     _=input("debug")
     """
-    optimizer_g = torch.optim.Adam(train_generator.parameters(), **ADAMPARAM)
-    optimizer_d = torch.optim.Adam(train_discriminator.parameters(), **ADAMPARAM2)
+    optimizer_g = torch.optim.Adam(train_generator.parameters(), **ADAMPARAM_G)
+    optimizer_d = torch.optim.Adam(train_discriminator.parameters(), **ADAMPARAM_D)
     
     loss_func_g = criterion_g
     loss_func_d = criterion_d
@@ -251,9 +254,12 @@ def main(args):
             for generating_train in range(args.k):
                 # Data prepare
                 random_picker = torch.randperm(b_x.shape[0])
+                true_tag = (b_y == b_y[random_picker]).all(1)
+                false_label = torch.Tensor([random_picker[i] for i in range(random_picker.shape[0]) if true_tag[i] == 0]).long()
                 data_d  = b_x.cuda()
-                data_wrong = b_x[random_picker].cuda()
+                data_wrong = b_x[false_label].cuda()
                 data_label = b_y.cuda()
+                data_wrong_label = b_y[false_label].cuda()
                 sample_noise = noise_distribution.sample((b_x.shape[0], 100)).squeeze(2).cuda()
                 
                 # Loss calculation
@@ -261,7 +267,7 @@ def main(args):
                 generated = train_generator(sample_noise,data_label)
                 generated = train_discriminator(generated,data_label)
                 data_d    = train_discriminator(data_d,data_label)
-                data_wrong= train_discriminator(data_wrong, data_label)
+                data_wrong= train_discriminator(data_wrong, data_wrong_label)
                 dloss = loss_func_d(generated=generated, data=data_d, wrong_data=data_wrong)
                 dloss.backward()
                 epoch_dloss += dloss.item()
