@@ -30,12 +30,12 @@ class Generator(nn.Module):
                                      nn.LeakyReLU(),
                                      )
         self.fc = nn.Sequential(nn.Linear(356,4*4*512),
-                                nn.BatchNorm1d(4*4*512, momentum=0.9),
-                                nn.LeakyReLU(),
+                                #nn.BatchNorm1d(4*4*512, momentum=0.9),
+                                #nn.LeakyReLU(),
                                 )
         self.conv_layers = nn.Sequential(nn.BatchNorm2d(512, momentum=0.9),
                                          nn.LeakyReLU(),
-                                         #nn.Dropout(0.2),
+                                         nn.Dropout(0.1),
                                          nn.ConvTranspose2d(512, 
                                                             256, 
                                                             kernel_size=4, 
@@ -45,7 +45,7 @@ class Generator(nn.Module):
                                                 
                                         nn.BatchNorm2d(256, momentum=0.9),
                                         nn.LeakyReLU(),
-                                        #nn.Dropout(0.2),
+                                        nn.Dropout(0.1),
                                         nn.ConvTranspose2d(256,
                                                            128,
                                                            kernel_size=4,
@@ -54,7 +54,7 @@ class Generator(nn.Module):
                                                            ), #64 * 64 * 64
                                         nn.BatchNorm2d(128, momentum=0.9),
                                         nn.LeakyReLU(),
-                                        #nn.Dropout(0.1),
+                                        nn.Dropout(0.1),
                                         nn.ConvTranspose2d(128,
                                                            64,
                                                            kernel_size=4,
@@ -63,14 +63,14 @@ class Generator(nn.Module):
                                                            ), #3 * 64 * 64               
                                         nn.BatchNorm2d(64, momentum=0.9),
                                         nn.LeakyReLU(),
-                                        #nn.Dropout(0.1),
+                                        nn.Dropout(0.1),
                                         nn.ConvTranspose2d(64,
                                                            3,
                                                            kernel_size=4,
                                                            stride=2,
                                                            padding=1,
                                                            ), #3 * 64 * 64               
-                                        nn.BatchNorm2d(3, momentum=0.9),
+                                        #nn.BatchNorm2d(3, momentum=0.9),
                                         #nn.LeakyReLU(),
                                         nn.Tanh(),                                        
                                         )
@@ -102,7 +102,7 @@ class Discriminator(nn.Module):
                                                    ), #32 * 30 * 30
                                         nn.BatchNorm2d(32, momentum=0.9),
                                         nn.LeakyReLU(),
-                                        nn.Dropout(0.8),
+                                        nn.Dropout(0.7),
                                         nn.Conv2d(32,
                                                   64,
                                                   stride=2,
@@ -111,7 +111,7 @@ class Discriminator(nn.Module):
                                                   ), #64 * 14 * 14
                                         nn.BatchNorm2d(64, momentum=0.9),
                                         nn.LeakyReLU(),
-                                        nn.Dropout(0.8),
+                                        nn.Dropout(0.7),
                                         nn.Conv2d(64,
                                                   128,
                                                   stride=2,
@@ -120,7 +120,7 @@ class Discriminator(nn.Module):
                                                   ), #128 * 6 * 6
                                         nn.BatchNorm2d(128, momentum=0.9),
                                         nn.LeakyReLU(),
-                                        nn.Dropout(0.8),
+                                        nn.Dropout(0.7),
                                         nn.Conv2d(128,
                                                   256,
                                                   stride=1,
@@ -129,7 +129,7 @@ class Discriminator(nn.Module):
                                                   ), #256 * 4 * 4
                                         nn.BatchNorm2d(256, momentum=0.9),
                                         nn.LeakyReLU(),
-                                        nn.Dropout(0.8),
+                                        nn.Dropout(0.7),
                                         
                                         )
         self.to_out = nn.Sequential(
@@ -141,9 +141,9 @@ class Discriminator(nn.Module):
                                                   kernel_size=1,
                                                   stride=(1,1),
                                                   ),
-                                         #nn.BatchNorm2d(512, momentum=0.9),
+                                         nn.BatchNorm2d(512, momentum=0.9),
                                          nn.LeakyReLU(),
-                                         #nn.Dropout(0.7),
+                                         nn.Dropout(0.7),
                                          )
     def forward(self, x, label):
         y = self.txt_emb(label)
@@ -168,7 +168,7 @@ def main(args):
     tags_wanted = [tag_dict[i] for i in tags_wanted]
     tags = torch.zeros(25,130)
     for i in range(len(tags_wanted)):
-        tags[5*i:6*i-1,tags_wanted[i]] = 1
+        tags[5*i:5*(i+1),tags_wanted[i]] = 1
     tags = tags.cuda()
     
     noise_distribution = torch.distributions.Normal(torch.Tensor([0.0]), torch.Tensor([1.0]))
@@ -180,7 +180,7 @@ def main(args):
     for e in tqdm(range(args.epoch)):
         test_generator = torch.load(args.model_directory+args.model_name+'_epoch_'+str(e+1)+'_generator.pkl').eval().cuda()        
         generated_waifu = test_generator(sample_noise, tags)
-        generated_waifu = generated_waifu * 127.5 + 127.5
+        generated_waifu = (-1*generated_waifu + 1)/2*255
         generated_waifu = generated_waifu.detach().cpu().numpy().astype(np.int32)
         generated_waifu = np.transpose(generated_waifu, [0,2,3,1])
         fig, axs = plt.subplots(r, c)
@@ -199,7 +199,7 @@ def main(args):
     
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--model_name', '-mn', type=str, default='CGAN_2')
+    parser.add_argument('--model_name', '-mn', type=str, default='CGAN_3')
     parser.add_argument('--model_directory', '-md', type=str, default='../../../MLDS_models/hw3-2/')
     parser.add_argument('--epoch', '-e', type=int, default=50)
     #parser.add_argument('--k', '-k', type=int, default=2)
