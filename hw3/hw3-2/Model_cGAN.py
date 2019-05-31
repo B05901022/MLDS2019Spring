@@ -199,7 +199,7 @@ def main(args):
     data=torch.Tensor(data)
     label=torch.Tensor(np.load(args.label))
     dataset = Data.TensorDataset(data,label)
-    train_dataloader = Data.DataLoader(dataset, batch_size=BATCHSIZE)
+    train_dataloader = Data.DataLoader(dataset, batch_size=BATCHSIZE, shuffle=True)
     total_batch=data.shape[0]//BATCHSIZE
     print("Loading complete.")
     
