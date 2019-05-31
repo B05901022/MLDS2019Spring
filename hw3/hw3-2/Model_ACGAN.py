@@ -12,10 +12,10 @@ import torch.nn as nn
 from torchsummary import summary #(for debug)
 import argparse
 ADAMPARAM = {'lr':0.0002, 'betas':(0.5, 0.999), 'eps':1e-5}
-ADAMPARAM2= {'lr':0.0001, 'betas':(0.5, 0.999), 'eps':1e-5}
+ADAMPARAM2= {'lr':0.0002, 'betas':(0.5, 0.999), 'eps':1e-5}
 SGDPARAM  = {'lr':0.0002, 'momentum':0.9}
-BATCHSIZE = 96
-WGANCLIP  = 0.01
+BATCHSIZE = 384
+#WGANCLIP  = 0.01
 
 """
 Generator 
@@ -122,8 +122,21 @@ class Discriminator(nn.Module):
 dis=Discriminator(64).cuda()
 summary(dis,input_size=[(3,64,64),(130,)])
 """
+
 criterion_LS=nn.BCELoss().cuda()
-criterion_LC=nn.CrossEntropyLoss().cuda()
+criterion_LC=nn.NLLLoss().cuda()
+"""
+def criterion_LS(predicted_real,predicted_fake):
+    return torch.mean(torch.log(predicted_real)) + torch.mean(torch.log(1-predicted_fake))
+def criterion_LC(cato_real,label_real,cato_fake,label_fake):
+    sr=0
+    sf=0
+    for i in range(cato_real.shape[0]):
+         sr=sr+cato_real[i][label_real[i]]
+         sf=sf+cato_fake[i][label_fake[i]]
+    return torch.mean(torch.log(sr)) + torch.mean(torch.log(sf))
+"""
+#criterion_LC=nn.CrossEntropyLoss().cuda()
 def main(args):
     data=np.load(args.data)
     data=np.moveaxis(data,3,1)
@@ -172,9 +185,9 @@ def main(args):
             data_d     = torch.index_select(b_x, 1, sample_tag).cuda()
             """
             if b_x.shape[0]!=BATCHSIZE:
-                real_truth=torch.Tensor((np.ones((b_x.shape[0],1)))).squeeze(1)
-                fake_truth=torch.Tensor((np.ones((b_x.shape[0],1)))).squeeze(1)
-                print(real_truth.shape,fake_truth.shape)
+                real_truth=torch.Tensor((np.ones((b_x.shape[0],1)))).squeeze(1).cuda()
+                fake_truth=torch.Tensor((np.ones((b_x.shape[0],1)))).squeeze(1).cuda()
+                #shape,fake_truth.shape)
             for generating_train in range(args.k):
                 # Data prepare
                 #random_picker = torch.randperm(BATCHSIZE)
@@ -188,18 +201,18 @@ def main(args):
                 # Loss calculation
                 optimizer_d.zero_grad()
                 x_fake = train_generator(sample_noise,gen_label)
-                data_fake,label_fake = train_discriminator(x_fake,data_label)
+                data_fake,label_fake = train_discriminator(x_fake,gen_label)
                 data_real,label_real = train_discriminator(data_d,data_label)
-                label_real=label_real.to(torch.float)
-                label_fake=label_fake.to(torch.float)
+                label_real=label_real.to(torch.float).squeeze(1)
+                label_fake=label_fake.to(torch.float).squeeze(1)
                 data_label=torch.max(data_label,1)[1]
                 gen_label=torch.max(gen_label,1)[1]
                 #print (gen_label.shape,data_label.shape,label_real.shape,label_fake.shape)
                 #data_wrong= train_discriminator(data_wrong, data_label)
                 #dloss = loss_func_d(generated=generated, data=data_d, wrong_data=data_wrong)
-                loss_Ls=criterion_LS(data_real,real_truth)+criterion_LS(data_fake,fake_truth)
+                loss_Ls=criterion_LS(data_real,real_truth)+criterion_LS(data_real,fake_truth)
                 loss_Lc=criterion_LC(label_real,data_label)+criterion_LC(label_fake,gen_label)
-                dloss=loss_Lc+loss_Ls
+                dloss=-(loss_Lc+loss_Ls)
                 dloss.backward()
                 epoch_dloss += dloss.item()
                 optimizer_d.step()
@@ -212,24 +225,20 @@ def main(args):
             """
             Train G
             """
-            data_label = b_y.cuda()
+            #data_label = b_y.cuda()
             sample_noise = noise_distribution.sample((b_x.shape[0], 100)).squeeze(2).cuda()
             optimizer_g.zero_grad()
-            gen_label=torch.FloatTensor((np.ones((b_x.shape[0],130)))).cuda()
-            for i in range(gen_label.shape[0]):
-                gen_label[i][np.random.randint(0,129)]=1
             # Loss calculation
             optimizer_d.zero_grad()
+            gen_label=torch.FloatTensor((np.ones((b_x.shape[0],130)))).cuda()
+            for i in range(gen_label.shape[0]):
+                 gen_label[i][np.random.randint(0,129)]=1
             x_fake = train_generator(sample_noise,gen_label)
-            data_fake,label_fake = train_discriminator(x_fake,data_label)
-            data_real,label_real = train_discriminator(data_d,data_label)
-            label_real=label_real.to(torch.float)
-            label_fake=label_fake.to(torch.float)
-            data_label=torch.max(data_label,1)[1]
+            data_fake,label_fake = train_discriminator(x_fake,gen_label)
+            loss_Ls=criterion_LS(data_real,real_truth)+criterion_LS(data_real,fake_truth)
             gen_label=torch.max(gen_label,1)[1]
-            loss_Ls=criterion_LS(data_real,real_truth)+criterion_LS(data_fake,fake_truth)
-            loss_Lc=criterion_LC(label_real,data_label)+criterion_LC(label_fake,gen_label)             
-            gloss=loss_Lc-loss_Ls
+            loss_Lc=criterion_LC(label_real,data_label)+criterion_LC(label_fake,gen_label)
+            gloss=-(loss_Lc-loss_Ls)
             gloss.backward()
             epoch_gloss += gloss.item()
             optimizer_g.step()
@@ -266,8 +275,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--data', '-d', type=str, default='E:/large_image.npy')#AnimeDataset/
     parser.add_argument('--label', '-l', type=str, default='E:/tag.npy')
-    parser.add_argument('--model_name', '-mn', type=str, default='GAN_3-2')
-    parser.add_argument('--model_directory', '-md', type=str, default='H:/hw3-2/')
+    parser.add_argument('--model_name', '-mn', type=str, default='ACGAN_3-2')
+    parser.add_argument('--model_directory', '-md', type=str, default='D:/hw3-2/')
     parser.add_argument('--epoch', '-e', type=int, default=50)
     parser.add_argument('--k', '-k', type=int, default=2)
     args = parser.parse_args()
