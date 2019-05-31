@@ -282,6 +282,8 @@ def main(args):
         print()
         print("Discriminator Loss: ", epoch_dloss)
         print("Generator Loss: ", epoch_gloss)
+        
+        sss
     
     dloss_record = np.array(dloss_record)
     gloss_record = np.array(gloss_record)
