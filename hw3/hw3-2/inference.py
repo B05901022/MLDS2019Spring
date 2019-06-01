@@ -199,7 +199,7 @@ def main(args):
     
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--model_name', '-mn', type=str, default='CGAN_6_LS_LABELSMOOTH_True')
+    parser.add_argument('--model_name', '-mn', type=str, default='CGAN_6_LS_LABELSMOOTH_False')
     parser.add_argument('--model_directory', '-md', type=str, default='../../../MLDS_models/hw3-2/')
     parser.add_argument('--epoch', '-e', type=int, default=50)
     #parser.add_argument('--k', '-k', type=int, default=2)
