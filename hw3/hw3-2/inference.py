@@ -35,7 +35,7 @@ class Generator(nn.Module):
                                 )
         self.conv_layers = nn.Sequential(nn.BatchNorm2d(512, momentum=0.9),
                                          nn.LeakyReLU(),
-                                         nn.Dropout(0.1),
+                                         #nn.Dropout(0.5),
                                          nn.ConvTranspose2d(512, 
                                                             256, 
                                                             kernel_size=4, 
@@ -45,7 +45,7 @@ class Generator(nn.Module):
                                                 
                                         nn.BatchNorm2d(256, momentum=0.9),
                                         nn.LeakyReLU(),
-                                        nn.Dropout(0.1),
+                                        #nn.Dropout(0.5),
                                         nn.ConvTranspose2d(256,
                                                            128,
                                                            kernel_size=4,
@@ -54,7 +54,7 @@ class Generator(nn.Module):
                                                            ), #64 * 64 * 64
                                         nn.BatchNorm2d(128, momentum=0.9),
                                         nn.LeakyReLU(),
-                                        nn.Dropout(0.1),
+                                        #nn.Dropout(0.5),
                                         nn.ConvTranspose2d(128,
                                                            64,
                                                            kernel_size=4,
@@ -63,7 +63,7 @@ class Generator(nn.Module):
                                                            ), #3 * 64 * 64               
                                         nn.BatchNorm2d(64, momentum=0.9),
                                         nn.LeakyReLU(),
-                                        nn.Dropout(0.1),
+                                        #nn.Dropout(0.5),
                                         nn.ConvTranspose2d(64,
                                                            3,
                                                            kernel_size=4,
@@ -102,7 +102,7 @@ class Discriminator(nn.Module):
                                                    ), #32 * 30 * 30
                                         nn.BatchNorm2d(32, momentum=0.9),
                                         nn.LeakyReLU(),
-                                        nn.Dropout(0.7),
+                                        nn.Dropout(0.1),
                                         nn.Conv2d(32,
                                                   64,
                                                   stride=2,
@@ -111,7 +111,7 @@ class Discriminator(nn.Module):
                                                   ), #64 * 14 * 14
                                         nn.BatchNorm2d(64, momentum=0.9),
                                         nn.LeakyReLU(),
-                                        nn.Dropout(0.7),
+                                        nn.Dropout(0.1),
                                         nn.Conv2d(64,
                                                   128,
                                                   stride=2,
@@ -120,7 +120,7 @@ class Discriminator(nn.Module):
                                                   ), #128 * 6 * 6
                                         nn.BatchNorm2d(128, momentum=0.9),
                                         nn.LeakyReLU(),
-                                        nn.Dropout(0.7),
+                                        nn.Dropout(0.1),
                                         nn.Conv2d(128,
                                                   256,
                                                   stride=1,
@@ -129,7 +129,7 @@ class Discriminator(nn.Module):
                                                   ), #256 * 4 * 4
                                         nn.BatchNorm2d(256, momentum=0.9),
                                         nn.LeakyReLU(),
-                                        nn.Dropout(0.7),
+                                        nn.Dropout(0.1),
                                         
                                         )
         self.to_out = nn.Sequential(
@@ -143,7 +143,7 @@ class Discriminator(nn.Module):
                                                   ),
                                          nn.BatchNorm2d(512, momentum=0.9),
                                          nn.LeakyReLU(),
-                                         nn.Dropout(0.7),
+                                         #nn.Dropout(0.2),
                                          )
     def forward(self, x, label):
         y = self.txt_emb(label)
@@ -199,7 +199,7 @@ def main(args):
     
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--model_name', '-mn', type=str, default='CGAN_3_LS_LS_LABELSMOOTH_False')
+    parser.add_argument('--model_name', '-mn', type=str, default='CGAN_5_LS_LABELSMOOTH_True')
     parser.add_argument('--model_directory', '-md', type=str, default='../../../MLDS_models/hw3-2/')
     parser.add_argument('--epoch', '-e', type=int, default=50)
     #parser.add_argument('--k', '-k', type=int, default=2)

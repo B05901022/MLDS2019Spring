@@ -1,3 +1,4 @@
-python3 Model_cGAN.py -mn CGAN_3_LS -gt LS
-python3 Model_cGAN.py -mn CGAN_3_NS_LABELSMOOTH -gt NS -ls True
-python3 Model_cGAN.py -mn CGAN_3_LS_LABELSMOOTH -gt LS -ls True
+python3 Model_cGAN.py -mn CGAN_5 -gt NS
+python3 Model_cGAN.py -mn CGAN_5 -gt LS
+python3 Model_cGAN.py -mn CGAN_5 -gt NS -ls True
+python3 Model_cGAN.py -mn CGAN_5 -gt LS -ls True
