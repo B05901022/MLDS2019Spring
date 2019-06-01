@@ -25,8 +25,20 @@ ConvTranspose2d:
         (input_height - 1) * stride - 2*padding + kernel_size + output_padding
 """
 
-ADAMPARAM_G = {'lr':0.0002, 'betas':(0.5, 0.999), 'eps':1e-5}
-ADAMPARAM_D = {'lr':0.002, 'betas':(0.5, 0.999), 'eps':1e-5}
+"""
+Model_3:
+    G:0.0002
+    D:0.00008
+Model_4, Model_5:
+    G:0.0002
+    D:0.002
+Model_6:
+    G:0.0002
+    D:0.0008
+"""
+
+ADAMPARAM_G = {'lr':0.00002, 'betas':(0.5, 0.999), 'eps':1e-5}
+ADAMPARAM_D = {'lr':0.00008, 'betas':(0.5, 0.999), 'eps':1e-5}
 SGDPARAM  = {'lr':0.0002, 'momentum':0.9}
 BATCHSIZE = 512
 WGANCLIP  = 0.01
