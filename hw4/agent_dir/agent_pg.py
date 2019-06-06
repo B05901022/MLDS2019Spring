@@ -1,6 +1,9 @@
 from agent_dir.agent import Agent
 import scipy
 import numpy as np
+import skimage
+import torch
+import torch.nn as nn
 
 def prepro(o,
            image_size=[105,80],#[80,80],
@@ -24,9 +27,27 @@ def prepro(o,
     y = 0.2126 * o[:, :, 0] + 0.7152 * o[:, :, 1] + 0.0722 * o[:, :, 2]   #gray scale
     resized = skimage.transform.resize(y, image_size)[17:-8,:]            #delete score board
     
-    return np.expand_dims(resized.astype(np.float32),axis=2)
+    return np.expand_dims(resized.astype(np.float32),axis=2)              #shape (height, wodth) -> (1, height, wodth)
 
-
+def optimizer_sel(model_name, model_params, optim, lr, load):
+    if optim == 'Adam':
+        print('Optimizer: Adam')
+        if load:
+            state_dict = torch.load(model_name+'.optim')
+            return torch.optim.Adam(model_params, lr=lr, betas=(0.9,0.999)).load_state_dict(state_dict)
+        else:
+            return torch.optim.Adam(model_params, lr=lr, betas=(0.9,0.999))
+    elif optim == 'RMSprop':
+        print('Optimizer: RMSprop')
+        if load:
+            state_dict = torch.load(model_name+'.optim')
+            return torch.optim.RMSprop(model_params, lr=lr, alpha=0.99).load_state_dict(state_dict)
+        else:
+            return torch.optim.RMSprop(model_params, lr=lr, alpha=0.99)
+    elif optim == 'SGD':
+        print('Optimizer: SGD')
+        return torch.optim.SGD(model_params, lr=lr)
+    
 class Agent_PG(Agent):
     def __init__(self, env, args):
         """
@@ -43,6 +64,32 @@ class Agent_PG(Agent):
         ##################
         # YOUR CODE HERE #
         ##################
+        else:
+            #train model
+            self.last_frame = None
+            
+            if args.load_model:
+                self.model = torch.load(args.model_name+'.pkl')
+                self.optimizer = optimizer_sel(args.model_name,
+                                               self.model.parameters(),
+                                               args.optim,
+                                               args.lr,
+                                               load=True,
+                                               )
+                
+            else:
+                self.model = nn.Sequential(nn.Linear(80*80*1, 256),
+                                           nn.ReLU(),
+                                           nn.Linear(256,1),
+                                           nn.Sigmoid(),
+                                           )
+                self.optimizer = ooptimizer_sel(None,
+                                                self.model.parameters(),
+                                                args.optim,
+                                                args.lr,
+                                                load=False,
+                                                )
+                
 
 
     def init_game_setting(self):
@@ -55,6 +102,7 @@ class Agent_PG(Agent):
         ##################
         # YOUR CODE HERE #
         ##################
+        self.last_frame = None
         pass
 
 
