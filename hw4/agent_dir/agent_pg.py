@@ -60,14 +60,23 @@ class Agent_PG(Agent):
         if args.test_pg:
             #you can load your model here
             print('loading trained model')
+            self.model = torch.load(args.model_name+'.pkl')
+            self.last_frame = None
 
         ##################
         # YOUR CODE HERE #
         ##################
         else:
             #train model
-            self.last_frame = None
             
+            ### initialize ###
+            self.last_frame = None
+            self.gamma      = args.gamma
+            self.batchsize  = args.batchsize
+            self.episode    = args.episode
+            self.ppo        = args.ppo
+            
+            ### model ###
             if args.load_model:
                 self.model = torch.load(args.model_name+'.pkl')
                 self.optimizer = optimizer_sel(args.model_name,
@@ -113,7 +122,47 @@ class Agent_PG(Agent):
         ##################
         # YOUR CODE HERE #
         ##################
-        pass
+        
+        ### initialize reward list ###
+        total_rwd = []
+        steps_rwd = []
+        prob_list = []
+        act_list  = []
+        
+        rwd_mean  = 0
+        rwd_srd   = 1
+        rwd_eps   = 1e-10
+        
+        loss = 0
+        best_result = -21
+        latest_rwd  = []
+        
+        if self.ppo:
+            pass
+        else:
+            for episode in range(self.episode):
+                
+                ### initialize game ###
+                
+                o = self.env.reset()                    #reset game
+                self.last_frame = prepro(o)             #initialize first frame
+                action = self.env.action_space.sample() #random initial action
+                o, _, _, _ = self.env.step(action)      #first observation
+                
+                while True:
+                    
+                    o = prepro(o)
+                    residual_state = prepro(self.last_frame)
+                    self.last_frame = o
+                    
+                    action, p = self.make_action(residual_state, test=False)
+                    o, rwd, done, _ = self.env.step(action)
+                    
+                    prob_list.append(p)
+                    act_list.append(action)
+                    
+                    
+            return
 
 
     def make_action(self, observation, test=True):
@@ -131,5 +180,11 @@ class Agent_PG(Agent):
         ##################
         # YOUR CODE HERE #
         ##################
+        
+        if test:
+        
+        else:
+            
+        
         return self.env.get_random_action()
 
