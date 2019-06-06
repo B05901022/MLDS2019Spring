@@ -15,5 +15,6 @@ def add_arguments(parser):
     parser.add_argument('--batchsize',  type=int,  default=32,    help='Batch size')
     parser.add_argument('--episide',    type=int,  default=1000,  help='Episodes')
     parser.add_argument('--ppo',        type=bool, default=False, help='Proximal policy optimization')
+    parser.add_argument('--vanilla_pg', type=bool, default=False, help='If use vanilla policy gradient')
     
     return parser

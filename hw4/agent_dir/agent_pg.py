@@ -4,6 +4,9 @@ import numpy as np
 import skimage
 import torch
 import torch.nn as nn
+import math
+import torch.nn.functional as F
+from environment import Environment
 
 def prepro(o,
            image_size=[105,80],#[80,80],
@@ -48,6 +51,29 @@ def optimizer_sel(model_name, model_params, optim, lr, load):
         print('Optimizer: SGD')
         return torch.optim.SGD(model_params, lr=lr)
     
+def test_agent(test_agent, test_env, test_episode, test_seed):
+    
+    test_rwd = []
+    test_env.seed = test_seed
+    
+    for episode in range(test_episode):
+        state = test_env.reset()
+        test_agent.init_game_setting()
+        done = False
+        episode_rwd = 0
+        
+        while not done:
+            action = test_agent.make_action(state, test=True)
+            state, rwd, done, _ = test_env.step(action)
+            episode_rwd += rwd
+            
+        test_rwd.append(episode_rwd)
+        
+    print('Run ', test_episode, ' episodes', end=' ')
+    print('Mean: ', np.mean(test_rwd))
+    
+    return np.mean(test_rwd)
+    
 class Agent_PG(Agent):
     def __init__(self, env, args):
         """
@@ -75,11 +101,22 @@ class Agent_PG(Agent):
             self.batchsize  = args.batchsize
             self.episode    = args.episode
             self.ppo        = args.ppo
+            self.vanilla_pg = args.vanilla_pg
+            self.traincurve = []
+            self.loss_func  = F.binary_cross_entropy
+            
+            ### for test ###
+            self.test_args    = args
+            self.test_episode = 30
+            self.test_seed    = 11037
+            
+            ### for save ###
+            self.model_name = args.model_name
             
             ### model ###
             if args.load_model:
-                self.model = torch.load(args.model_name+'.pkl')
-                self.optimizer = optimizer_sel(args.model_name,
+                self.model = torch.load(self.model_name+'.pkl')
+                self.optimizer = optimizer_sel(self.model_name,
                                                self.model.parameters(),
                                                args.optim,
                                                args.lr,
@@ -92,7 +129,7 @@ class Agent_PG(Agent):
                                            nn.Linear(256,1),
                                            nn.Sigmoid(),
                                            )
-                self.optimizer = ooptimizer_sel(None,
+                self.optimizer = optimizer_sel(None,
                                                 self.model.parameters(),
                                                 args.optim,
                                                 args.lr,
@@ -130,12 +167,14 @@ class Agent_PG(Agent):
         act_list  = []
         
         rwd_mean  = 0
-        rwd_srd   = 1
-        rwd_eps   = 1e-10
+        rwd_std   = 0
+        
+        n_rwd     = 0
+        batch_iter= 1
         
         loss = 0
         best_result = -21
-        latest_rwd  = []
+        latest_rwd  = [] #for learning curve
         
         if self.ppo:
             pass
@@ -148,11 +187,12 @@ class Agent_PG(Agent):
                 self.last_frame = prepro(o)             #initialize first frame
                 action = self.env.action_space.sample() #random initial action
                 o, _, _, _ = self.env.step(action)      #first observation
+                episode_rwd = []
                 
                 while True:
                     
                     o = prepro(o)
-                    residual_state = prepro(self.last_frame)
+                    residual_state = o - prepro(self.last_frame)
                     self.last_frame = o
                     
                     action, p = self.make_action(residual_state, test=False)
@@ -161,8 +201,123 @@ class Agent_PG(Agent):
                     prob_list.append(p)
                     act_list.append(action)
                     
+                    if rwd != 0:
+                        """
+                        Someone gets point.
+                        """
+                        if not self.vanilla_pg:
+                            T = len(steps_rwd)
+                            for steps in range(T):
+                                steps_rwd_now = ( self.gamma**(T-steps) ) * rwd
+                                steps_rwd[steps] += steps_rwd_now
+                                rwd_mean += steps_rwd_now
+                                rwd_std  += steps_rwd_now ** 2
+                                
+                            steps_rwd.append(rwd)
+                            rwd_mean += rwd
+                            rwd_std  += rwd ** 2
+                            n_rwd    += T+1
+                            
+                            episode_rwd.append(rwd)
+                            total_rwd.extend(steps_rwd)
+                            steps_rwd = []
+                        else:
+                            T = len(steps_rwd)
+                            steps_rwd = [rwd] * (T+1)
+                            episode_rwd.append(rwd)
+                            total_rwd.extend(steps_rwd)
+                            steps_rwd = []
+                        
+                    else:
+                        steps_rwd.append(rwd)
                     
-            return
+                    if done:
+                        if batch_iter != self.batchsize:
+                            batch_iter += 1
+                            self.init_game_setting()
+                            if len(latest_rwd) < 30:
+                                latest_rwd.append(np.sum(episode_rwd))
+                            else:
+                                latest_rwd.pop(0)
+                                latest_rwd.append(np.sum(episode_rwd))
+                                self.traincurve.append(np.mean(latest_rwd))
+                            break
+                        else:
+                            batch_iter = 1
+                            self.init_game_setting()
+                            if len(latest_rwd) < 30:
+                                latest_rwd.append(np.sum(episode_rwd))
+                            else:
+                                latest_rwd.pop(0)
+                                latest_rwd.append(np.sum(episode_rwd))
+                                self.traincurve.append(np.mean(latest_rwd))
+                                print('Episode: ',episode, ' Mean: ', np.mean(latest_rwd), end=' ')
+                            
+                            #update parameters
+                            self.optimizer.zero_grad()
+                            
+                            if not self.vanilla_pg:
+                                batch_mean = rwd_mean / n_rwd
+                                batch_std  = math.sqrt(rwd_std  / n_rwd - batch_mean ** 2)
+                                
+                                total_rwd = torch.Tensor(total_rwd).cuda()
+                                total_rwd = (total_rwd - batch_mean) / batch_std
+                            else:
+                                total_rwd = torch.Tensor(total_rwd).cuda()
+                            
+                            act_list = torch.Tensor(act_list).cuda()
+                            prob_list= torch.stack(prob_list).view(-1).cuda()
+                            
+                            loss = self.loss_func(input=prob_list,
+                                                  target=act_list,
+                                                  weight=total_rwd,
+                                                  reduction='sum',
+                                                  )
+                            """
+                            BCELoss:
+                                return -1 * torch.sum(
+                                                    torch.dot(weight,
+                                                              target * torch.log(input) +
+                                                              (1-target) * torch.log(1-input),
+                                                              )
+                                                     )
+                            """
+                            loss /= self.batchsize
+                            loss.backward()
+                            self.optimizer.step()
+                            
+                            ### initialize for next batch ###
+                            total_rwd = []
+                            steps_rwd = []
+                            prob_list = []
+                            act_list  = []
+        
+                            rwd_mean  = 0
+                            rwd_std   = 0
+        
+                            n_rwd     = 0
+                            batch_iter= 1
+                            
+                            print('Loss: ', loss.item(), end='\r')
+                            break
+                        
+                if episode % 200 == 0 and episode != 0:
+                    print('Testing')
+                    test_env = Environment('Pong-v0', self.test_args, test=True)
+                    result = test_agent(test_agent=self,
+                                        test_env=test_env,
+                                        test_episode=args.test_episode,
+                                        test_seed=args.test_seed,
+                                        )
+                    if result > best_result:
+                        best_result = result
+                        torch.save(self.model, './model/'+ self.model_name + str(episode) + '.pkl')
+                        torch.save(self.optimizer.state_dict, './model/'+ self.model_name + str(episode) + '.optim')
+                        np.save('./training_curve/' + self.model_name + str(episode) + '.npy', np.array(self.traincurve))
+                        print('Testing finished.')
+                        print('Model saved, result: ', best_result)
+        np.save('./training_curve/' + self.model_name + '.npy', np.array(self.traincurve))
+        return
 
 
     def make_action(self, observation, test=True):
@@ -182,9 +337,27 @@ class Agent_PG(Agent):
         ##################
         
         if test:
-        
+            if self.last_frame == None:
+                observation = prepro(observation)
+                self.last_frame = observation
+            else:
+                observation = prepro(observation)
+                observation = observation - self.last_frame
+                self.last_frame = observation
+            observation = torch.Tensor(observation).view(1,-1).cuda()
+            prob = self.model(observation)
+            if np.random.rand() < prob[0,0].item():
+                action = 3
+            else:
+                action = 2
+            return action
         else:
+            observation = torch.Tensor(observation).view(1,-1).cuda()
+            prob = self.model(observation)
+            if np.random.rand() < prob[0,0].item():
+                action = 3
+            else:
+                action = 2 
             
-        
-        return self.env.get_random_action()
+            return action, prob #self.env.get_random_action()
 
