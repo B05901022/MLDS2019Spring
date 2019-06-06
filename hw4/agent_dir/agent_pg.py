@@ -38,14 +38,14 @@ def optimizer_sel(model_name, model_params, optim, lr, load):
     if optim == 'Adam':
         print('Optimizer: Adam')
         if load:
-            state_dict = torch.load(model_name+'.optim')
+            state_dict = torch.load('./model/hw4-1/' + model_name+'.optim')
             return torch.optim.Adam(model_params, lr=lr, betas=(0.9,0.999)).load_state_dict(state_dict)
         else:
             return torch.optim.Adam(model_params, lr=lr, betas=(0.9,0.999))
     elif optim == 'RMSprop':
         print('Optimizer: RMSprop')
         if load:
-            state_dict = torch.load(model_name+'.optim')
+            state_dict = torch.load('./model/hw4-1/' + model_name+'.optim')
             return torch.optim.RMSprop(model_params, lr=lr, alpha=0.99).load_state_dict(state_dict)
         else:
             return torch.optim.RMSprop(model_params, lr=lr, alpha=0.99)
@@ -88,7 +88,7 @@ class Agent_PG(Agent):
         if args.test_pg:
             #you can load your model here
             print('loading trained model')
-            self.model = torch.load(args.model_name+'.pkl')
+            self.model = torch.load('./model/hw4-1/' + args.model_name + '.pkl')
             self.last_frame = None
 
         ##################
@@ -117,7 +117,7 @@ class Agent_PG(Agent):
             
             ### model ###
             if args.load_model:
-                self.model = torch.load(self.model_name+'.pkl')
+                self.model = torch.load('./model/hw4-1/' + self.model_name + '.pkl').cuda()
                 self.optimizer = optimizer_sel(self.model_name,
                                                self.model.parameters(),
                                                args.optim,
@@ -126,11 +126,11 @@ class Agent_PG(Agent):
                                                )
                 
             else:
-                self.model = nn.Sequential(nn.Linear(80*80*1, 256),
-                                           nn.ReLU(),
-                                           nn.Linear(256,1),
-                                           nn.Sigmoid(),
-                                           )
+                self.model = nn.ModuleList([nn.Sequential(nn.Linear(80*80*1, 256),
+                                            nn.ReLU(),
+                                            nn.Linear(256,1),
+                                            nn.Sigmoid(),
+                                            )]).cuda()
                 self.optimizer = optimizer_sel(None,
                                                 self.model.parameters(),
                                                 args.optim,
@@ -161,7 +161,7 @@ class Agent_PG(Agent):
         ##################
         # YOUR CODE HERE #
         ##################
-        
+
         ### initialize reward list ###
         total_rwd = []
         steps_rwd = []
@@ -194,7 +194,7 @@ class Agent_PG(Agent):
                 while True:
                     
                     o = prepro(o)
-                    residual_state = o - prepro(self.last_frame)
+                    residual_state = o - self.last_frame
                     self.last_frame = o
                     
                     action, p = self.make_action(residual_state, test=False)
@@ -304,6 +304,7 @@ class Agent_PG(Agent):
                             break
                         
                 if episode % 200 == 0 and episode != 0:
+                    print()
                     print('Testing')
                     test_env = Environment('Pong-v0', self.test_args, test=True)
                     result = test_agent(test_agent=self,
@@ -313,12 +314,13 @@ class Agent_PG(Agent):
                                         )
                     if result > best_result:
                         best_result = result
-                        torch.save(self.model, './model/'+ self.model_name + str(episode) + '.pkl')
-                        torch.save(self.optimizer.state_dict, './model/'+ self.model_name + str(episode) + '.optim')
-                        np.save('./training_curve/' + self.model_name + str(episode) + '.npy', np.array(self.traincurve))
+                        torch.save(self.model, './model/hw4-1/'+ self.model_name + str(episode) + '.pkl')
+                        torch.save(self.optimizer.state_dict, './model/hw4-1/'+ self.model_name + str(episode) + '.optim')
+                        np.save('./training_curve/hw4-1/' + self.model_name + str(episode) + '.npy', np.array(self.traincurve))
                         print('Testing finished.')
-                        print('Model saved, result: ', best_result)
-        np.save('./training_curve/' + self.model_name + '.npy', np.array(self.traincurve))
+                        print('Model saved.')
+                        print('Result: ', best_result)
+        np.save('./training_curve/hw4-1/' + self.model_name + '.npy', np.array(self.traincurve))
         return
 
 
@@ -339,7 +341,7 @@ class Agent_PG(Agent):
         ##################
         
         if test:
-            if self.last_frame == None:
+            if type(self.last_frame) == type(None):
                 observation = prepro(observation)
                 self.last_frame = observation
             else:
@@ -347,7 +349,7 @@ class Agent_PG(Agent):
                 observation = observation - self.last_frame
                 self.last_frame = observation
             observation = torch.Tensor(observation).view(1,-1).cuda()
-            prob = self.model(observation)
+            prob = self.model[0](observation)
             if np.random.rand() < prob[0,0].item():
                 action = 3
             else:
@@ -355,7 +357,7 @@ class Agent_PG(Agent):
             return action
         else:
             observation = torch.Tensor(observation).view(1,-1).cuda()
-            prob = self.model(observation)
+            prob = self.model[0](observation)
             if np.random.rand() < prob[0,0].item():
                 action = 3
             else:
