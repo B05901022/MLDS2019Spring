@@ -2,7 +2,9 @@ from agent_dir.agent import Agent
 import scipy
 import numpy as np
 
-def prepro(o,image_size=[80,80]):
+def prepro(o,
+           image_size=[105,80],#[80,80],
+           ):
     """
     Call this function to preprocess RGB image to grayscale image if necessary
     This preprocessing code is from
@@ -15,8 +17,13 @@ def prepro(o,image_size=[80,80]):
         Grayscale image, shape: (80, 80, 1)
     
     """
-    y = o.astype(np.uint8)
-    resized = scipy.misc.imresize(y, image_size)
+    
+    #y = o.astype(np.uint8)
+    #resized = scipy.misc.imresize(y, image_size)
+    
+    y = 0.2126 * o[:, :, 0] + 0.7152 * o[:, :, 1] + 0.0722 * o[:, :, 2]   #gray scale
+    resized = skimage.transform.resize(y, image_size)[17:-8,:]            #delete score board
+    
     return np.expand_dims(resized.astype(np.float32),axis=2)
 
 
