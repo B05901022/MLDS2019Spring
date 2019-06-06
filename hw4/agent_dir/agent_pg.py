@@ -1,5 +1,5 @@
 from agent_dir.agent import Agent
-import scipy
+#import scipy
 import numpy as np
 import skimage
 import torch
@@ -306,8 +306,8 @@ class Agent_PG(Agent):
                     test_env = Environment('Pong-v0', self.test_args, test=True)
                     result = test_agent(test_agent=self,
                                         test_env=test_env,
-                                        test_episode=args.test_episode,
-                                        test_seed=args.test_seed,
+                                        test_episode=self.test_episode,
+                                        test_seed=self.test_seed,
                                         )
                     if result > best_result:
                         best_result = result
