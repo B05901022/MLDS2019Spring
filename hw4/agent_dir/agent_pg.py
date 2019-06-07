@@ -7,6 +7,7 @@ import torch.nn as nn
 import math
 import torch.nn.functional as F
 from environment import Environment
+from tqdm import tqdm
 
 np.random.seed(11037)
 
@@ -58,7 +59,7 @@ def test_agent(test_agent, test_env, test_episode, test_seed):
     test_rwd = []
     test_env.seed = test_seed
     
-    for episode in range(test_episode):
+    for episode in tqdm(range(test_episode)):
         state = test_env.reset()
         test_agent.init_game_setting()
         done = False
@@ -126,11 +127,64 @@ class Agent_PG(Agent):
                                                )
                 
             else:
+                """
                 self.model = nn.ModuleList([nn.Sequential(nn.Linear(80*80*1, 256),
                                             nn.ReLU(),
                                             nn.Linear(256,1),
                                             nn.Sigmoid(),
                                             )]).cuda()
+                """
+                """
+                self.model = nn.ModuleList([nn.Sequential(nn.Conv2d(1,3,kernel_size=4,stride=2,padding=0), # (1,3,39,39)
+                                                          nn.ReLU(),
+                                                          nn.MaxPool2d(kernel_size=3), #(1,3,13,13)
+                                                          ),
+                                            nn.Sequential(nn.Linear(3*13*13,1),
+                                                          nn.Sigmoid()),
+                                            ]).cuda()
+                """
+                """
+                self.model = nn.ModuleList([nn.Sequential(nn.Conv2d(1,1,kernel_size=5, dilation=3, stride=3), #(1,1,23,23)
+                                                          nn.ReLU(),
+                                                          nn.MaxPool2d(kernel_size=2), #(1,1,11,11)
+                                                          ),
+                                            nn.Sequential(nn.Linear(80*80, 128),
+                                                          nn.ReLU(),
+                                                          ),
+                                            nn.Sequential(nn.Linear(11*11+128, 1),
+                                                          nn.Sigmoid(),
+                                                          ),
+                                            ]).cuda()
+                """
+                """
+                self.model = nn.ModuleList([nn.Sequential(nn.Conv2d(1,1,kernel_size=5, stride=5), # (1,1,16,16)
+                                                          nn.ReLU(),
+                                                          nn.MaxPool2d(kernel_size=2), # (1,1,8,8)
+                                                          ),
+                                            nn.Sequential(nn.Linear(80*80, 256),
+                                                          nn.ReLU(),
+                                                          ),
+                                            nn.Sequential(nn.Linear(256 + 8*8, 1),
+                                                          nn.Sigmoid(),
+                                                          ),
+                                            ]).cuda()
+                """
+
+                self.model = nn.ModuleList([nn.Sequential(nn.Conv2d(1,3,kernel_size=4,stride=2,padding=0), # (1,3,39,39)
+                                                          nn.ReLU(),
+                                                          nn.Conv2d(3,3,kernel_size=4,stride=2,padding=0), # (1,3,18,18)
+                                                          ),
+                                            nn.Sequential(nn.Linear(3*18*18,128),
+                                                          nn.ReLU(),
+                                                          ),
+                                            nn.Sequential(nn.Linear(80*80,128),
+                                                          nn.ReLU(),
+                                                          ),
+                                            nn.Sequential(nn.Linear(256,1),
+                                                          nn.Sigmoid(),
+                                                          ),
+                                            ]).cuda()
+
                 self.optimizer = optimizer_sel(None,
                                                 self.model.parameters(),
                                                 args.optim,
@@ -201,7 +255,7 @@ class Agent_PG(Agent):
                     o, rwd, done, _ = self.env.step(action)
                     
                     prob_list.append(p)
-                    act_list.append(action)
+                    act_list.append(action-2)
                     
                     if rwd != 0:
                         """
@@ -253,7 +307,7 @@ class Agent_PG(Agent):
                                 latest_rwd.pop(0)
                                 latest_rwd.append(np.sum(episode_rwd))
                                 self.traincurve.append(np.mean(latest_rwd))
-                                print('Episode: ',episode, ' Mean: ', np.mean(latest_rwd), end=' ')
+                                print('Episode: ',episode+1, ' Mean: ', np.mean(latest_rwd), end=' ')
                             
                             #update parameters
                             self.optimizer.zero_grad()
@@ -312,14 +366,14 @@ class Agent_PG(Agent):
                                         test_episode=self.test_episode,
                                         test_seed=self.test_seed,
                                         )
-                    if result > best_result:
-                        best_result = result
-                        torch.save(self.model, './model/hw4-1/'+ self.model_name + str(episode) + '.pkl')
-                        torch.save(self.optimizer.state_dict, './model/hw4-1/'+ self.model_name + str(episode) + '.optim')
-                        np.save('./training_curve/hw4-1/' + self.model_name + str(episode) + '.npy', np.array(self.traincurve))
-                        print('Testing finished.')
-                        print('Model saved.')
-                        print('Result: ', best_result)
+
+                    best_result = max(result, best_result)
+                    torch.save(self.model, './model/hw4-1/'+ self.model_name + '_' + str(episode) + '.pkl')
+                    torch.save(self.optimizer.state_dict, './model/hw4-1/'+ '_' + self.model_name + str(episode) + '.optim')
+                    np.save('./training_curve/hw4-1/' + self.model_name + '_' + str(episode) + '.npy', np.array(self.traincurve))
+                    print('Testing finished.')
+                    print('Model saved.')
+                    print('Result: ', best_result)
         np.save('./training_curve/hw4-1/' + self.model_name + '.npy', np.array(self.traincurve))
         return
 
@@ -346,18 +400,50 @@ class Agent_PG(Agent):
                 self.last_frame = observation
             else:
                 observation = prepro(observation)
-                observation = observation - self.last_frame
                 self.last_frame = observation
+                observation = observation - self.last_frame
+                
+            """
             observation = torch.Tensor(observation).view(1,-1).cuda()
             prob = self.model[0](observation)
+            """
+            
+            observation = torch.Tensor(observation).cuda() # (80,80,1)
+            observation2= observation.view(1,-1) # (1,80*80)
+            observation = observation.unsqueeze(0) # (1,80,80,1)
+            observation = observation.unsqueeze(0) # (1,1,80,80,1)
+            observation = observation.squeeze(4) # (1,1,80,80)
+            observation = self.model[0](observation) # (1,3,18,18)
+            observation = observation.view(1,-1) # (1,3*18*18)
+            observation = self.model[1](observation) # (1,128)
+            observation2= self.model[2](observation2) # (1,128) 
+            observation = torch.cat((observation, observation2),dim=1) # (1,256)
+            prob        = self.model[3](observation) # (1,1)
+
             if np.random.rand() < prob[0,0].item():
                 action = 3
             else:
                 action = 2
             return action
         else:
+
+            """
             observation = torch.Tensor(observation).view(1,-1).cuda()
             prob = self.model[0](observation)
+            """
+            
+            observation = torch.Tensor(observation).cuda() # (80,80,1)
+            observation2= observation.view(1,-1) # (1,80*80)
+            observation = observation.unsqueeze(0) # (1,80,80,1)
+            observation = observation.unsqueeze(0) # (1,1,80,80,1)
+            observation = observation.squeeze(4) # (1,1,80,80)
+            observation = self.model[0](observation) # (1,3,18,18)
+            observation = observation.view(1,-1) # (1,3*18*18)
+            observation = self.model[1](observation) # (1,128)
+            observation2= self.model[2](observation2) # (1,128) 
+            observation = torch.cat((observation, observation2),dim=1) # (1,256)
+            prob        = self.model[3](observation) # (1,1)
+            
             if np.random.rand() < prob[0,0].item():
                 action = 3
             else:
