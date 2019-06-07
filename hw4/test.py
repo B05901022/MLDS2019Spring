@@ -8,6 +8,7 @@ You DO NOT need to upload this file
 import argparse
 import numpy as np
 from environment import Environment
+from tqdm import tqdm
 
 seed = 11037
 
@@ -27,7 +28,8 @@ def parse():
 def test(agent, env, total_episodes=30):
     rewards = []
     env.seed(seed)
-    for i in range(total_episodes):
+    print('Testing...')
+    for i in tqdm(range(total_episodes)):
         state = env.reset()
         agent.init_game_setting()
         done = False
