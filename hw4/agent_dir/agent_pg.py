@@ -35,13 +35,19 @@ def prepro(o,
     
     return np.expand_dims(resized.astype(np.float32),axis=2)              #shape (height, wodth) -> (1, height, wodth)
 
+"""
+##########################
+#                        #
+# Will retrieve Nonetype #
+#                        #
+##########################
+
 def optimizer_sel(model_name, model_params, optim, lr, load, test_episode=0):
     if optim == 'Adam':
         print('Optimizer: Adam')
         if load:
-            state_dict = torch.load('./model/hw4-1/' + model_name + '_' + str(test_episode) + '.optim')
-            optimizer = torch.optim.Adam(model_params, lr=lr, betas=(0.9,0.999))
-            return optimizer.load_state_dict(state_dict)
+            state_dict = torch.load('./model/hw4-1/' + model_name + '_' + str(test_episode) + '.optim')            
+            return torch.optim.Adam(model_params, lr=lr, betas=(0.9,0.999)).load_state_dict(state_dict)
         else:
             return torch.optim.Adam(model_params, lr=lr, betas=(0.9,0.999))
     elif optim == 'RMSprop':
@@ -55,7 +61,8 @@ def optimizer_sel(model_name, model_params, optim, lr, load, test_episode=0):
     elif optim == 'SGD':
         print('Optimizer: SGD')
         return torch.optim.SGD(model_params, lr=lr)
-    
+"""
+
 def test_agent(test_agent, test_env, test_episode, test_seed):
     
     test_rwd = []
@@ -91,7 +98,8 @@ class Agent_PG(Agent):
         if args.test_pg:
             #you can load your model here
             print('loading trained model')
-            self.model = torch.load('./model/hw4-1/' + args.model_name + '.pkl')
+            print('Model: '+args.model_name+'_'+str(args.test_episode))
+            self.model = torch.load('./model/hw4-1/' + args.model_name + '_' + str(args.test_episode) + '.pkl')
             self.last_frame = None
 
         ##################
@@ -114,7 +122,7 @@ class Agent_PG(Agent):
             self.test_args    = args
             self.test_episode = 30
             self.test_seed    = 11037
-            self.test_episode = args.test_episode
+            self.pre_episode = args.test_episode
             
             ### for save ###
             self.model_name = args.model_name
@@ -122,7 +130,22 @@ class Agent_PG(Agent):
             ### model ###
             if args.load_model:
                 print('Loading model...')
-                self.model = torch.load('./model/hw4-1/' + self.model_name  + '_' + str(self.test_episode) + '.pkl').cuda()
+                print('Model: '+args.model_name+'_'+str(self.pre_episode))
+                self.model = torch.load('./model/hw4-1/' + self.model_name  + '_' + str(self.pre_episode) + '.pkl').cuda()
+                
+                if args.optim == "Adam":
+                    print("Optimizer: Adam" )
+                    self.optimizer = torch.optim.Adam(self.model.parameters(), lr=args.lr, betas=(0.9,0.999))
+                elif args.optim == "RMSprop":
+                    print("Optimizer: RMSprop")
+                    self.optimizer = torch.optim.RMSprop(self.model.parameters(), lr=args.lr, alpha=0.99)
+                elif args.optim == "SGD":
+                    print("Optimizer: SGD")
+                    self.optimizer = torch.optim.SGD(self.model.parameters(), lr=args.lr)
+                else:
+                    print("No optimizer type given, use default optimizer Adam")
+                    self.optimizer = torch.optim.Adam(self.model.parameters(), lr=args.lr, betas=(0.9,0.999))
+                """
                 self.optimizer = optimizer_sel(self.model_name,
                                                self.model.parameters(),
                                                args.optim,
@@ -130,6 +153,9 @@ class Agent_PG(Agent):
                                                load=True,
                                                test_episode=self.test_episode
                                                )
+                """
+                state_dict = torch.load('./model/hw4-1/' + self.model_name + '_' + str(self.pre_episode) + '.optim')
+                self.optimizer.load_state_dict(state_dict)
                 print('Loading finished.')
             else:
                 """
@@ -312,7 +338,7 @@ class Agent_PG(Agent):
                                 latest_rwd.pop(0)
                                 latest_rwd.append(np.sum(episode_rwd))
                                 self.traincurve.append(np.mean(latest_rwd))
-                                print('Episode: %3d'%(episode+1), ' Mean: %.4f'%(np.mean(latest_rwd)), end=' ')
+                                print('Episode: %3d'%(self.pre_episode+episode+1), ' Mean: %.4f'%(np.mean(latest_rwd)), end=' ')
                             
                             #update parameters
                             self.optimizer.zero_grad()
@@ -373,9 +399,9 @@ class Agent_PG(Agent):
                                         )
 
                     best_result = max(result, best_result)
-                    torch.save(self.model, './model/hw4-1/'+ self.model_name + '_' + str(episode) + '.pkl')
-                    torch.save(self.optimizer.state_dict(), './model/hw4-1/' + self.model_name + '_' + str(episode) + '.optim')
-                    np.save('./training_curve/hw4-1/' + self.model_name + '_' + str(episode) + '.npy', np.array(self.traincurve))
+                    torch.save(self.model, './model/hw4-1/'+ self.model_name + '_' + str(self.pre_episode+episode) + '.pkl')
+                    torch.save(self.optimizer.state_dict(), './model/hw4-1/' + self.model_name + '_' + str(self.pre_episode+episode) + '.optim')
+                    np.save('./training_curve/hw4-1/' + self.model_name + '_' + str(self.pre_episode+episode) + '.npy', np.array(self.traincurve))
                     print('Testing finished.')
                     print('Model saved.')
                     print('Result: ', best_result)
