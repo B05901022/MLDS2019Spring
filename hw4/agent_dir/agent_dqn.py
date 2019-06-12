@@ -3,6 +3,7 @@ import torch
 import torch.nn as nn
 import numpy as np
 import collections
+import torch.nn.functional as F
 """
 class Replay_Memory(object):
     def __init__(self,capacity=128):
@@ -20,11 +21,13 @@ class Replay_Memory(object):
     def sample(self):
         return self.memory[np.random.randint(0,self.capacity)]
 """
-np.random.seed(1024)
-torch.cuda.manual_seed(1024)
-torch.manual_seed(1024)
+np.random.seed(11037)
+torch.cuda.manual_seed(11037)
+torch.manual_seed(11037)
 device=torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+
 class DQN_Model(nn.Module):
+    
     def __init__(self):
         super (DQN,self).__init__()
         self.conv1=nn.Conv2d(1,3,kernel_size=4,stride=2,padding=0)
@@ -32,17 +35,20 @@ class DQN_Model(nn.Module):
         self.flatten=nn.Linear(3*18*18,128)
         self.dense1=nn.Linear(80*80,128)
         self.dense2=nn.Linear(256,1)
+        
     def forward(self,x):
-        x=self.conv1(x)
-        x=nn.ReLU(x)
-        x=self.conv2(x)
-        x=self.flatten(x)
-        x=nn.ReLU(x)
-        x=self.dense1(x)
-        x=nn.ReLU(x)
+        x1=self.conv1(x)
+        x1=F.ReLU(x1)
+        x1=self.conv2(x1)
+        x1=self.flatten(x1)
+        x1=F.ReLU(x1)
+        x2=self.dense1(x)
+        x2=F.ReLU(x2)
+        x=torch.cat((x1,x2),dim=1)
         x=self.dense2(x)
-        x=nn.Sigmoid(x)
-        return (x)
+        x=F.Sigmoid(x)
+        return x
+    
 class Agent_DQN(Agent):
     def __init__(self, env, args):
         """
@@ -61,18 +67,19 @@ class Agent_DQN(Agent):
             #print('loading trained model')
             self.last_frame=None
         elif args.train_dqn:
-            self.episode=args.episode
-            self.batchsize=args.batchsize
-            self.replay_buffer=collections.deque()
-            self.replay_buffer_capacity=args.capacity
-            self.traincurve=[]
-            self.eps_start=args.eps_start
-            self.eps_decay=args.eps_decay
-            self.eps_end=args.eps_end
-            self.target_update=args.target_update        
-            self.train_method=args.train_method #Must be "Epsilon" or "Boltzmann"
-            self.optim=args.optim           #Must be "RMSprop","Adam" or "SGD"
-            self.lr=args.lr
+            self.episode                = args.dqn_episode
+            self.batchsize              = args.dqn_batchsize
+            self.replay_buffer          = collections.deque()
+            self.replay_buffer_capacity = args.dqn_capacity
+            self.traincurve             = []
+            self.eps_start              = args.dqn_eps_start
+            self.eps_decay              = args.dqn_eps_decay
+            self.eps_end                = args.dqn_eps_end
+            self.target_update          = args.dqn_target_update        
+            self.train_method           = args.dqn_train_method #Must be "Epsilon" or "Boltzmann"
+            self.optim                  = args.dqn_optim           #Must be "RMSprop","Adam" or "SGD"
+            self.lr                     = args.dqn_lr
+            
             """
             self.policy_model=nn.ModuleList([nn.Sequential(nn.Conv2d(1,3,kernel_size=4,stride=2,padding=0), # (1,3,39,39)
                                                           nn.ReLU(),
@@ -90,8 +97,9 @@ class Agent_DQN(Agent):
                                             ]).cuda()
             self.target_model=self.policy_model
             """
-            self.policy_model=DQN().to(device) #The shape seems (84*84*1), and the models may need to be modified.
-            self.traget_model=DQN().to(device)
+            
+            self.policy_model=DQN_Model().to(device) #The shape seems (84*84*1), and the models may need to be modified.
+            self.target_model=DQN_Model().to(device)
             if self.optim=="RMSprop":
                 self.optimizer=torch.optim.RMSprop(self.policy_model.parameters(),lr=self.lr,alpha=0.9)
             elif self.optim=="Adam":
