@@ -71,6 +71,8 @@ class Agent_DQN(Agent):
             self.eps_end=args.eps_end
             self.target_update=args.target_update        
             self.train_method=args.train_method #Must be "Epsilon" or "Boltzmann"
+            self.optim=args.optim           #Must be "RMSprop","Adam" or "SGD"
+            self.lr=args.lr
             """
             self.policy_model=nn.ModuleList([nn.Sequential(nn.Conv2d(1,3,kernel_size=4,stride=2,padding=0), # (1,3,39,39)
                                                           nn.ReLU(),
@@ -88,8 +90,14 @@ class Agent_DQN(Agent):
                                             ]).cuda()
             self.target_model=self.policy_model
             """
-            self.policy_model=DQN()
-            self.traget_model=DQN()
+            self.policy_model=DQN().to(device) #The shape seems (84*84*1), and the models may need to be modified.
+            self.traget_model=DQN().to(device)
+            if self.optim=="RMSprop":
+                self.optimizer=torch.optim.RMSprop(self.policy_model.parameters(),lr=self.lr,alpha=0.9)
+            elif self.optim=="Adam":
+                self.optimizer=torch.optim.Adam(self.policy_model.parameters(),lr=self.lr,betas=(0.9,0.999))
+            elif self.optim=="SGD":
+                self.optimizer=torch.optim.SGD(self.policy_model.parameters(),lr=self.lr)
         ##################
         # YOUR CODE HERE #
         ##################
@@ -118,11 +126,12 @@ class Agent_DQN(Agent):
         for episode in range(self.episode):
             for times in range(self.target_update):
                 
-        #pass
-    def update_epsilon(eps_start,eps_end,eps_decay):
-        if eps_start>eps_end:
-            eps_start=eps_start-eps_decay
-        return eps_start
+        pass
+    def update_epsilon(self,eps_start,eps_end,eps_decay):
+        if self.eps_start>self.eps_end:
+            self.eps_start=self.eps_start-self.eps_decay
+        else:
+            pass
 
     def make_action(self, observation, test=True):
         """
