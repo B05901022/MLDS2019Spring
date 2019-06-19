@@ -29,7 +29,6 @@ def add_arguments(parser):
     parser.add_argument('--dqn_sample_frequency',    type=int,  default=4,   help='Sample frequency')
     parser.add_argument('--batchsize',  type=int,  default=1,       help='Batch size')
     parser.add_argument('--episode',    type=int,  default=10000,   help='Episodes')
-<<<<<<< HEAD
     parser.add_argument('--ppo',        type=bool, default=False,   help='Proximal policy optimization')
     parser.add_argument('--vanilla_pg', type=bool, default=False,   help='If use vanilla policy gradient')
     parser.add_argument('--test_episode',type=int, default=1600,    help='Testing/Retraining episode')
@@ -52,15 +51,8 @@ def add_arguments(parser):
     parser.add_argument('--dqn_optim',          '-do',  type=str,  default='Adam',   help='Currently supporting RMSprop, Adam, SGD')
     parser.add_argument('--dqn_lr',             '-dlr', type=float,default=1.5e-4,   help='Learning rate')
     parser.add_argument('--dqn_gamma',          '-dg',  type=float,default=0.99,     help='Discount factor')
-
-=======
     parser.add_argument('--test_episode',    type=int,  default=10000,   help='Eest episode')
     parser.add_argument('--dqn_batchsize',  type=int,  default=64,       help='Batch size')
     parser.add_argument('--dqn_episode',type=int, default=1600,    help='Testing/Retraining episode')
     
-    
-    
-    
-    
->>>>>>> ce2d81f2b05f5fe09d5647a1cbd6cbd43dd39119
-    return parser
+
