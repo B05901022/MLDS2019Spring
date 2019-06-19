@@ -7,7 +7,6 @@ import torch.nn as nn
 import random
 #import math
 import torch.nn.functional as F
-<<<<<<< HEAD
 import math
 import os
 import yaml
@@ -16,12 +15,6 @@ from environment import Environment
 from tqdm import tqdm
 
 """
-=======
-from environment import Environment
-from tqdm import tqdm
-import collections
-"""     
->>>>>>> ce2d81f2b05f5fe09d5647a1cbd6cbd43dd39119
 class Replay_Memory(object):
     def __init__(self,capacity=128):
         self.memory=([])
@@ -46,7 +39,6 @@ random.seed(11037)
 device=torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 def prepro(o):
-<<<<<<< HEAD
     # (84,84,4)
     #o = np.array(o).astype(np.float32) / 255.0 #(84,84,4)
     #o = np.mean(o, axis=2)                     #(84,84)   greyscale
@@ -89,12 +81,9 @@ class NoisyLinear(nn.Linear):
         epsilon_b = epsilon_j.squeeze(dim=1)
 
         return F.linear(x, self.weight+self.sigma_w*epsilon_w, self.bias+self.sigma_b*epsilon_b)
-
-=======
     o = np.transpose(o, (2,0,1))
     o = np.expand_dims(o, axis = 0)
     return o
->>>>>>> ce2d81f2b05f5fe09d5647a1cbd6cbd43dd39119
 class DQN_Model(nn.Module):
     
     def __init__(self):
@@ -105,7 +94,6 @@ class DQN_Model(nn.Module):
         self.dense1=nn.Linear(64*8*8,512)
         self.dense2=nn.Linear(512,3)
         
-<<<<<<< HEAD
         self.conv_layer = nn.Sequential(nn.Conv2d(4,  32, kernel_size=7, stride=2), 
                                         nn.ReLU(),
                                         nn.Conv2d(32, 64, kernel_size=5, stride=2), 
@@ -181,7 +169,7 @@ def test(test_agent, test_env, test_episode, test_seed):
     print('Run %d episodes'%(test_episode))
     print('Mean:', np.mean(rewards))
     return np.mean(rewards)
-=======
+
     def forward(self,x):
         x=F.relu(self.conv1(x))
         x=F.relu(self.conv2(x))
@@ -191,8 +179,7 @@ def test(test_agent, test_env, test_episode, test_seed):
         x=F.relu(self.dense2(x))
         x=torch.sigmoid(x)
         return x
->>>>>>> ce2d81f2b05f5fe09d5647a1cbd6cbd43dd39119
-    
+   
 class Agent_DQN(Agent):
     def __init__(self, env, args):
         """
@@ -205,7 +192,7 @@ class Agent_DQN(Agent):
 
         if args.test_dqn:
             print("Loading trained model...")
-<<<<<<< HEAD
+
             self.policy_model = torch.load('./model/hw4-2/' + args.dqn_model_name + '_' + str(args.dqn_test_episode) + 'p.pkl')
             if args.dqn_noisy:
                 self.policy_model.linr_layer[0].remove_noise()
@@ -322,7 +309,7 @@ class Agent_DQN(Agent):
                     self.optimizer = torch.optim.Adam(self.policy_model.parameters(),lr=self.lr,betas=(0.9,0.999))
 
                 self.env.clip_reward = False
-=======
+
             print("Model : "+args.model_name+'_'+str(args.test_episode))
             self.model=torch.load('./model/hw4-2'+args.model_name+'_'+str(args.test_episode)+'.pkl')
             #you can load your model here
@@ -398,7 +385,6 @@ class Agent_DQN(Agent):
         ##################
         #print(self.policy_model)
 
->>>>>>> ce2d81f2b05f5fe09d5647a1cbd6cbd43dd39119
 
     def init_game_setting(self):
         """
@@ -420,7 +406,6 @@ class Agent_DQN(Agent):
         ##################
         # YOUR CODE HERE #
         ##################
-<<<<<<< HEAD
 
         """
         Observation shape: (84,84,4)
@@ -604,7 +589,6 @@ class Agent_DQN(Agent):
     def update_epsilon(self):
         if self.eps >= self.eps_end:
             self.eps -= self.eps_decay
-=======
         batch_size   = self.batchsize
         sampled_data = None
         latest_r    = collections.deque([],maxlen=100)
@@ -666,7 +650,6 @@ class Agent_DQN(Agent):
     def update_epsilon(self):
         if self.eps_start>self.eps_end:
             self.eps_start=self.eps_start-self.eps_decay
->>>>>>> ce2d81f2b05f5fe09d5647a1cbd6cbd43dd39119
         else:
             pass
 
@@ -686,7 +669,6 @@ class Agent_DQN(Agent):
         # YOUR CODE HERE #
         ##################
         #1:NO-OP 2:Left 3:Right
-<<<<<<< HEAD
 
         if not test:
             q_value = self.policy_model(torch.Tensor(observation).to(device))
@@ -727,7 +709,6 @@ class Agent_DQN(Agent):
             q_value     = self.policy_model(torch.Tensor(observation).to(device), fixed_noise=True)
             action      =  torch.argmax(q_value).item()+1
             return action
-=======
         q_value=self.policy_model(torch.Tensor(observation).to(device))
         #print(q_value)
         if self.train_method=="Epsilon":
@@ -746,7 +727,6 @@ class Agent_DQN(Agent):
                     action=i
                     break
         return action
->>>>>>> ce2d81f2b05f5fe09d5647a1cbd6cbd43dd39119
         #self.env.get_random_action()
     def update_target_model(self):
         self.target_model.load_state_dict(self.policy_model.state_dict())
