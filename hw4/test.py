@@ -25,7 +25,7 @@ def parse():
     return args
 
 
-def test(agent, env, total_episodes=30):
+def test(agent, env, total_episodes=100):
     rewards = []
     env.seed(seed)
     print('Testing...')
