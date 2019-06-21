@@ -10,9 +10,9 @@ import torch.nn.functional as F
 import math
 import os
 import yaml
-import random
 from environment import Environment
 from tqdm import tqdm
+import collections
 
 """
 class Replay_Memory(object):
@@ -81,9 +81,8 @@ class NoisyLinear(nn.Linear):
         epsilon_b = epsilon_j.squeeze(dim=1)
 
         return F.linear(x, self.weight+self.sigma_w*epsilon_w, self.bias+self.sigma_b*epsilon_b)
-    o = np.transpose(o, (2,0,1))
-    o = np.expand_dims(o, axis = 0)
-    return o
+
+
 class DQN_Model(nn.Module):
     
     def __init__(self):
@@ -586,67 +585,6 @@ class Agent_DQN(Agent):
         self.optimizer.step()
         return loss.item()
 
-    def update_epsilon(self):
-        if self.eps >= self.eps_end:
-            self.eps -= self.eps_decay
-        batch_size   = self.batchsize
-        sampled_data = None
-        latest_r    = collections.deque([],maxlen=100)
-        for episode in range(self.episode):
-            o = self.env.reset()
-            o = prepro(o)
-            unclipped_r = 0
-            done = 0
-            while not done:
-                action = self.make_action(o)
-                #print(self.env.step(action+1))
-                o_next,r,done,_ = self.env.step(action+1)  #(0,1,2) to (1,2,3)
-                o_next=prepro(o_next)
-                unclipped_r+=r
-                r=np.sign(r) #Change r to make it be -1 or +1
-                state_transfer=(o,action,r,o_next,done)
-                o=o_next
-                self.step+=1
-                if self.train_method=="Epsilon":
-                    self.update_epsilon()
-                self.replay_buffer.append(state_transfer)
-                
-                if len(self.replay_buffer)>batch_size and \
-                self.step%self.sample_freqency==0:
-                    sampled_data=random.sample(self.replay_buffer,batch_size)
-                    loss=self.update_param_DQN(sampled_data)
-                    print ("Loss : %3f " % (loss))
-                if self.step%(self.target_update*self.sample_freqency)==0:
-                    print("Update target...")
-                    self.update_target_model()
-                    
-                    
-            #Game Over
-            latest_r.append(unclipped_r)
-            print("Episode :"+str(episode+1)+" Mean :"+str(np.mean(latest_r))\
-                  +" Latest :"+str(unclipped_r))
-            self.training_curve.append(np.mean(latest_r))
-            
-            unclipped_r=0
-            if (episode+1)%500==0:
-                parameter={"policy_model":self.policy_model,
-                           "target_model":self.target_model,
-                           "train_method":self.train_method,
-                           "eps_start": self.eps_start,
-                           "eps_decay": self.eps_decay,
-                           "eps_end": self.eps_end,
-                           "optim":self.optim,        
-                           "lr":self.lr,
-                           "sample_freqency":self.sample_freqency,
-                           "model_name":self.model_name,
-                           "step":self.step,
-                           "capacity":self.replay_buffer_capacity,
-                           "step":self.step
-                          }
-                torch.save(parameter,self.model_name+".pkl")
-           # for times in range(self.target_update):
-                
-        #pass
     def update_epsilon(self):
         if self.eps_start>self.eps_end:
             self.eps_start=self.eps_start-self.eps_decay
